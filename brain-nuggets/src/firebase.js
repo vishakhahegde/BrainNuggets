@@ -14,7 +14,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const FIRESTORE_DB = 'brainnuggets-69'
+export const db = getFirestore(app, FIRESTORE_DB);
 
 // Resolves with the current user, signing in anonymously on first visit.
 export function ensureUser() {
