@@ -1,0 +1,288 @@
+import { GoogleGenAI } from '@google/genai';
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+
+const SYSTEM = `You are a study coach for students with dyslexia, ADHD and other learning differences.
+Write in plain, warm, everyday language. Short sentences (under 20 words). One idea per sentence.
+Explain jargon the first time it appears. Never invent facts that are not in the source material.`;
+
+const str = { type: 'string' };
+const strArr = { type: 'array', items: str };
+
+const CONTEXT_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: str,
+    subject: str,
+    summary: { ...str, description: 'Two plain sentences on what this lecture is about.' },
+    concepts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { name: str, description: str, dependsOn: strArr },
+        required: ['name', 'description'],
+      },
+    },
+    plan: {
+      type: 'array',
+      description: 'The chunks to teach, in learning order.',
+      items: {
+        type: 'object',
+        properties: {
+          title: str,
+          focus: { ...str, description: 'The single big idea this chunk teaches.' },
+          pages: { type: 'array', items: { type: 'integer' } },
+          minutes: { type: 'integer' },
+        },
+        required: ['title', 'focus', 'pages', 'minutes'],
+      },
+    },
+  },
+  required: ['title', 'subject', 'summary', 'concepts', 'plan'],
+};
+
+const EXPLANATION_PROPS = {
+  bigIdea: { ...str, description: 'The one big idea, in one or two short sentences.' },
+  bullets: { ...strArr, description: 'Exactly 3 short supporting points.' },
+  analogy: { ...str, description: 'An everyday analogy that makes the idea click.' },
+};
+
+const CHUNK_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: str,
+    ...EXPLANATION_PROPS,
+    keyTerms: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { term: str, definition: str },
+        required: ['term', 'definition'],
+      },
+    },
+    original: { ...str, description: 'The source passage this chunk covers, copied verbatim from the PDF. Use blank lines between paragraphs.' },
+    mindMap: {
+      type: 'object',
+      properties: {
+        center: str,
+        branches: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { label: str, children: strArr },
+            required: ['label', 'children'],
+          },
+        },
+      },
+      required: ['center', 'branches'],
+    },
+    quiz: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          question: str,
+          options: strArr,
+          answerIndex: { type: 'integer' },
+          why: { ...str, description: 'One or two sentences on why the answer is right.' },
+          reteach: { ...str, description: 'A gentle, different re-explanation for a student who chose wrong. No blame.' },
+        },
+        required: ['question', 'options', 'answerIndex', 'why', 'reteach'],
+      },
+    },
+  },
+  required: ['title', 'bigIdea', 'bullets', 'analogy', 'keyTerms', 'original', 'mindMap', 'quiz'],
+};
+
+const EXPLAIN_SCHEMA = {
+  type: 'object',
+  properties: EXPLANATION_PROPS,
+  required: ['bigIdea', 'bullets', 'analogy'],
+};
+
+const ANSWER_SCHEMA = {
+  type: 'object',
+  properties: {
+    answer: str,
+    found: { type: 'boolean', description: 'False if the material does not cover the question.' },
+  },
+  required: ['answer', 'found'],
+};
+
+// Primary model first; when one is overloaded, fall back to the next and
+// skip the busy one for a few minutes so every call doesn't wait on it.
+const FALLBACKS = (process.env.GEMINI_FALLBACK_MODELS || '').split(',').map((m) => m.trim()).filter(Boolean);
+const MODELS = [...new Set([MODEL, ...FALLBACKS])];
+const BUSY = new Set([429, 500, 503, 'TIMEOUT']);
+const COOLDOWN_MS = 3 * 60 * 1000;
+const CALL_TIMEOUT_MS = 120 * 1000;
+const busyUntil = new Map();
+
+// The schema goes in the prompt rather than responseJsonSchema: strict constrained
+// decoding was ~4x slower for the same output. We validate required keys ourselves.
+async function callModel(model, parts, schema) {
+  const res = await ai.models.generateContent({
+    model,
+    contents: [{ role: 'user', parts: [...parts, { text: `Respond with JSON only, matching this JSON Schema:\n${JSON.stringify(schema)}` }] }],
+    config: {
+      systemInstruction: SYSTEM,
+      responseMimeType: 'application/json',
+      abortSignal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+    },
+  }).catch((err) => {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') err.status = 'TIMEOUT';
+    throw err;
+  });
+  const data = JSON.parse(res.text);
+  const missing = schema.required?.filter((k) => data[k] === undefined) ?? [];
+  if (missing.length) throw new Error(`Gemini response was missing ${missing.join(', ')}`);
+  return data;
+}
+
+async function generate(parts, schema) {
+  const now = Date.now();
+  const ready = MODELS.filter((m) => (busyUntil.get(m) ?? 0) < now);
+  const order = ready.length ? ready : MODELS;
+  let lastErr;
+  for (const model of order) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        return await callModel(model, parts, schema);
+      } catch (err) {
+        lastErr = err;
+        const status = err.status ?? err.code;
+        if (BUSY.has(status)) {
+          busyUntil.set(model, Date.now() + COOLDOWN_MS);
+          console.warn(`[gemini] ${model} unavailable (${status}), trying next model`);
+          break;
+        }
+        // Malformed JSON or missing keys: retry once on the same model.
+        if (status !== undefined || attempt === 1) throw err;
+        console.warn(`[gemini] ${model} bad response (${err.message}), retrying`);
+      }
+    }
+  }
+  throw lastErr;
+}
+
+const pdfPart = (base64) => ({ inlineData: { mimeType: 'application/pdf', data: base64 } });
+
+// Agent 1: read the whole PDF once and produce the shared context + teaching plan.
+export function buildContext(pdfBase64) {
+  return generate(
+    [
+      pdfPart(pdfBase64),
+      {
+        text: `Read this lecture PDF, including diagrams, tables and equations.
+Build a structured understanding of it: the title, subject, a two-sentence summary, the key concepts and how they depend on each other.
+Then plan how to teach it as a sequence of small chunks.
+- Each chunk teaches exactly one big idea and takes about 4 minutes for a student who reads slowly.
+- Follow the order a learner needs (foundations first), not necessarily page order.
+- Cover everything examinable. Skip course logistics, reading lists and admin.`,
+      },
+    ],
+    CONTEXT_SCHEMA,
+  );
+}
+
+const arr = (v) => (Array.isArray(v) ? v : []);
+
+// Models tend to put the right answer first; shuffle so position gives nothing away.
+function shuffleOptions(q) {
+  const order = q.options.map((_, i) => i).sort(() => Math.random() - 0.5);
+  return { ...q, options: order.map((i) => q.options[i]), answerIndex: order.indexOf(q.answerIndex) };
+}
+
+// Keeps the UI safe from slightly-off model output.
+function normalizeChunk(c) {
+  return {
+    ...c,
+    bullets: arr(c.bullets).slice(0, 3),
+    keyTerms: arr(c.keyTerms).filter((t) => t?.term && t?.definition),
+    mindMap: { center: c.mindMap?.center ?? c.title, branches: arr(c.mindMap?.branches).map((b) => ({ label: b.label, children: arr(b.children) })) },
+    quiz: arr(c.quiz)
+      .filter((q) => arr(q.options).length >= 2 && q.answerIndex >= 0 && q.answerIndex < q.options.length)
+      .map(shuffleOptions),
+  };
+}
+
+// Agents 2-4: simplify one chunk, map it, and write low-stakes quiz questions.
+export async function buildChunk(pdfBase64, context, index) {
+  const item = context.plan[index];
+  return normalizeChunk(await generate(
+    [
+      pdfPart(pdfBase64),
+      {
+        text: `Lecture context:
+${JSON.stringify({ title: context.title, summary: context.summary, concepts: context.concepts })}
+
+Full teaching plan (you are writing chunk ${index + 1} of ${context.plan.length}):
+${context.plan.map((p, i) => `${i + 1}. ${p.title} — ${p.focus}`).join('\n')}
+
+Write chunk ${index + 1}: "${item.title}" (pages ${item.pages.join(', ')}). Big idea: ${item.focus}
+- bigIdea: the one idea in plain words.
+- bullets: exactly 3 short points that support it.
+- analogy: one everyday comparison.
+- keyTerms: 2 to 5 subject-specific terms a struggling student might not know (never everyday words like "cells" or "energy"). Each must appear word-for-word in bigIdea or bullets. Give a one-line plain definition.
+- original: the matching source text copied verbatim from the PDF.
+- mindMap: the big idea at the center, 2 to 4 branches, each with 1 to 3 very short children (under 6 words).
+- quiz: 2 multiple-choice questions with 3 options each. Test understanding, not memorised wording. Keep the tone low-stakes.
+Do not repeat material that belongs to other chunks.`,
+      },
+    ],
+    CHUNK_SCHEMA,
+  ));
+}
+
+const STYLES = {
+  story: 'Explain it as a short story with a character who runs into this idea.',
+  example: 'Explain it through one concrete, real-world example the student has likely seen.',
+  steps: 'Explain it as a numbered sequence of simple steps, one action each.',
+  picture: 'Explain it by describing a simple picture or diagram the student can imagine.',
+};
+
+export function explainDifferently(chunk, style) {
+  return generate(
+    [
+      {
+        text: `A student did not understand this explanation:
+${JSON.stringify({ title: chunk.title, bigIdea: chunk.bigIdea, bullets: chunk.bullets, analogy: chunk.analogy })}
+
+Source text:
+${chunk.original}
+
+Re-explain the same idea in a completely different way. ${STYLES[style] ?? STYLES.example}
+Use a new analogy. Keep bullets to exactly 3. Do not say the previous explanation was confusing.`,
+      },
+    ],
+    EXPLAIN_SCHEMA,
+  );
+}
+
+export function askTutor(question, chunk, context) {
+  return generate(
+    [
+      {
+        text: `Answer the student's question using ONLY the study material below.
+If the material does not cover it, set found to false and say so kindly in one sentence.
+Answer in 2 to 4 short sentences.
+
+Lecture: ${context?.title ?? ''}
+Concepts: ${JSON.stringify(context?.concepts ?? [])}
+
+Current chunk "${chunk.title}" (pages ${(chunk.pages ?? []).join(', ')}):
+${chunk.original}
+
+Simplified version:
+${chunk.bigIdea}
+${(chunk.bullets ?? []).join('\n')}
+
+Question: ${question}`,
+      },
+    ],
+    ANSWER_SCHEMA,
+  );
+}
+
+export const STYLE_KEYS = Object.keys(STYLES);
