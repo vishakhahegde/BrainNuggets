@@ -52,7 +52,7 @@ export default function App() {
     <>
       {docId
         ? <Study uid={uid} docId={docId} prefs={prefs} setPrefs={setPrefs} comfortButton={comfortButton} accountButton={accountButton} />
-        : <Library uid={uid} comfortButton={comfortButton} accountButton={accountButton} />}
+        : <Library uid={uid} accountButton={accountButton} />}
       {comfortOpen && <ComfortPanel prefs={prefs} setPrefs={setPrefs} onClose={() => setComfortOpen(false)} />}
       {prefs.ruler && <ReadingRuler />}
     </>
