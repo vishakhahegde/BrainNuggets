@@ -40,7 +40,7 @@ export default function App() {
 
   const accountButton = (
     <div className="account">
-      {user.photoURL && <img className="avatar" src={user.photoURL} alt="" referrerPolicy="no-referrer" />}
+      {user.photoURL && <img className="avatar" src={user.photoURL} alt="" title={user.displayName || user.email} referrerPolicy="no-referrer" />}
       <span className="account-name">{user.displayName || user.email}</span>
       <button className="btn ghost" onClick={() => { window.location.hash = ''; signOutUser(); }}>
         Sign out
