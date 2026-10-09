@@ -77,6 +77,21 @@ const CHUNK_SCHEMA = {
       },
       required: ['center', 'branches'],
     },
+    figures: {
+      type: 'array',
+      description: 'Up to 2 figures from the PDF that help explain the big idea, most important first. Empty if none help.',
+      items: {
+        type: 'object',
+        properties: {
+          page: { type: 'integer', description: '1-based PDF page the figure is on.' },
+          box: { type: 'array', items: { type: 'integer' }, description: 'Tight box around the figure: [ymin, xmin, ymax, xmax], each 0-1000 relative to the page.' },
+          caption: { ...str, description: 'What the picture shows, in one plain sentence.' },
+          lookFor: { ...strArr, description: '2 or 3 very short pointers on where to look first (under 10 words each).' },
+          description: { ...str, description: 'A full plain description of the picture for someone who cannot see it.' },
+        },
+        required: ['page', 'box', 'caption', 'lookFor', 'description'],
+      },
+    },
     quiz: {
       type: 'array',
       items: {
@@ -194,12 +209,34 @@ function shuffleOptions(q) {
   return { ...q, options: order.map((i) => q.options[i]), answerIndex: order.indexOf(q.answerIndex) };
 }
 
+const clamp = (n) => Math.min(1000, Math.max(0, Math.round(Number(n) || 0)));
+
+// Keeps only figures we can crop: a real page and a box with some area.
+function normalizeFigures(figures, pages) {
+  return arr(figures)
+    .filter((f) => Number.isInteger(f?.page) && f.page >= 1 && f.caption && arr(f.box).length === 4)
+    .map((f) => {
+      const [y0, x0, y1, x1] = f.box.map(clamp);
+      return {
+        page: f.page,
+        box: [Math.min(y0, y1), Math.min(x0, x1), Math.max(y0, y1), Math.max(x0, x1)],
+        caption: f.caption,
+        lookFor: arr(f.lookFor).filter(Boolean).slice(0, 3),
+        description: f.description || f.caption,
+      };
+    })
+    .filter((f) => f.box[2] - f.box[0] > 20 && f.box[3] - f.box[1] > 20)
+    .sort((a, b) => (pages.includes(b.page) ? 1 : 0) - (pages.includes(a.page) ? 1 : 0))
+    .slice(0, 2);
+}
+
 // Keeps the UI safe from slightly-off model output.
-function normalizeChunk(c) {
+function normalizeChunk(c, pages = []) {
   return {
     ...c,
     bullets: arr(c.bullets).slice(0, 3),
     keyTerms: arr(c.keyTerms).filter((t) => t?.term && t?.definition),
+    figures: normalizeFigures(c.figures, pages),
     mindMap: { center: c.mindMap?.center ?? c.title, branches: arr(c.mindMap?.branches).map((b) => ({ label: b.label, children: arr(b.children) })) },
     quiz: arr(c.quiz)
       .filter((q) => arr(q.options).length >= 2 && q.answerIndex >= 0 && q.answerIndex < q.options.length)
@@ -227,13 +264,18 @@ Write chunk ${index + 1}: "${item.title}" (pages ${item.pages.join(', ')}). Big 
 - keyTerms: 2 to 5 subject-specific terms a struggling student might not know (never everyday words like "cells" or "energy"). Each must appear word-for-word in bigIdea or bullets. Give a one-line plain definition.
 - original: the matching source text copied verbatim from the PDF.
 - mindMap: the big idea at the center, 2 to 4 branches, each with 1 to 3 very short children (under 6 words).
+- figures: 0 to 2 diagrams, charts, tables or photos from pages ${item.pages.join(', ')} that genuinely help a student grasp the big idea, most important first. Skip logos, decorations and slide backgrounds. Give a tight box around just the figure, a one-sentence caption, 2 to 3 short "look for" pointers, and a plain description someone could follow without seeing it. Use an empty list if no figure helps.
 - quiz: 2 multiple-choice questions with 3 options each. Test understanding, not memorised wording. Keep the tone low-stakes.
 Do not repeat material that belongs to other chunks.`,
       },
     ],
     CHUNK_SCHEMA,
-  ));
+  ), item.pages);
 }
+
+// Plain-text version of a chunk's figures so text-only prompts can refer to them.
+const figureText = (chunk) =>
+  arr(chunk.figures).map((f, i) => `Figure ${i + 1} (page ${f.page}): ${f.caption} ${f.description}`).join('\n');
 
 const STYLES = {
   story: 'Explain it as a short story with a character who runs into this idea.',
@@ -251,7 +293,7 @@ ${JSON.stringify({ title: chunk.title, bigIdea: chunk.bigIdea, bullets: chunk.bu
 
 Source text:
 ${chunk.original}
-
+${figureText(chunk) && `\nFigures shown to the student:\n${figureText(chunk)}\n`}
 Re-explain the same idea in a completely different way. ${STYLES[style] ?? STYLES.example}
 Use a new analogy. Keep bullets to exactly 3. Do not say the previous explanation was confusing.`,
       },
@@ -277,7 +319,7 @@ ${chunk.original}
 Simplified version:
 ${chunk.bigIdea}
 ${(chunk.bullets ?? []).join('\n')}
-
+${figureText(chunk) && `\nFigures shown to the student:\n${figureText(chunk)}\n`}
 Question: ${question}`,
       },
     ],

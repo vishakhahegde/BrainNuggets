@@ -1,6 +1,7 @@
 import Highlight from './Highlight';
+import FigureCard from './FigureCard';
 
-export default function SimpleView({ chunk, variant, onShowFirst }) {
+export default function SimpleView({ uid, docId, chunk, variant, onShowFirst }) {
   const v = variant ?? chunk;
   const terms = chunk.keyTerms;
   return (
@@ -12,6 +13,7 @@ export default function SimpleView({ chunk, variant, onShowFirst }) {
         </p>
       )}
       <p className="big-idea"><Highlight text={v.bigIdea} terms={terms} /></p>
+      <FigureCard key={chunk.title} uid={uid} docId={docId} figures={chunk.figures} terms={terms} />
       <ul className="bullets">
         {v.bullets.map((b, i) => <li key={i}><Highlight text={b} terms={terms} /></li>)}
       </ul>

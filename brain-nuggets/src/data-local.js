@@ -14,7 +14,7 @@ function commit() {
   listeners.forEach((fn) => fn());
 }
 
-const user = (uid) => (db.users[uid] ??= { docs: {}, chunks: {}, prefs: null });
+const user = (uid) => (db.users[uid] ??= { docs: {}, chunks: {}, figures: {}, prefs: null });
 const ts = (n) => ({ toMillis: () => n });
 const view = (id, d) => ({ ...d, id, createdAt: ts(d.createdAt), updatedAt: ts(d.updatedAt) });
 
@@ -72,9 +72,11 @@ function patch(uid, id, data) {
 
 export const patchDoc = async (uid, id, data) => patch(uid, id, data);
 
-export async function saveChunk(uid, id, index, chunk, readyCount) {
+export async function saveChunk(uid, id, index, chunk, readyCount, images = []) {
   const list = user(uid).chunks[id];
   if (!list) return;
+  const figures = (user(uid).figures ??= {});
+  images.forEach(({ key, src }) => { figures[`${id}/${key}`] = src; });
   list[index] = chunk;
   patch(uid, id, { readyCount });
 }
@@ -93,7 +95,11 @@ export async function saveQuizResult(uid, id, chunkIndex, qIndex, result) {
   patch(uid, id, { quiz: { ...d.quiz, [`${chunkIndex}_${qIndex}`]: result } });
 }
 
+export const loadFigure = async (uid, id, key) => user(uid).figures?.[`${id}/${key}`] ?? null;
+
 export async function removeDoc(uid, id) {
+  const figures = user(uid).figures ?? {};
+  Object.keys(figures).filter((k) => k.startsWith(`${id}/`)).forEach((k) => delete figures[k]);
   delete user(uid).docs[id];
   delete user(uid).chunks[id];
   commit();
