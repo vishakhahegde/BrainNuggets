@@ -1,5 +1,8 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import {
+  getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, linkWithPopup,
+  signInWithCredential, signOut,
+} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Firebase web config is public by design; access is controlled by firestore.rules.
@@ -17,13 +20,23 @@ export const auth = getAuth(app);
 export const FIRESTORE_DB = 'brainnuggets-69'
 export const db = getFirestore(app, FIRESTORE_DB);
 
-// Resolves with the current user, signing in anonymously on first visit.
-export function ensureUser() {
-  return new Promise((resolve, reject) => {
-    const off = onAuthStateChanged(auth, (user) => {
-      off();
-      if (user) resolve(user);
-      else signInAnonymously(auth).then((c) => resolve(c.user), reject);
-    });
-  });
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: 'select_account' });
+
+export const watchUser = (cb) => onAuthStateChanged(auth, cb);
+
+// Signs in with Google. A visitor still on an old anonymous account is upgraded in
+// place (same uid, so their lessons stay); if that Google account already exists,
+// we sign into it instead.
+export async function signInWithGoogle() {
+  const current = auth.currentUser;
+  if (!current?.isAnonymous) return signInWithPopup(auth, provider);
+  try {
+    return await linkWithPopup(current, provider);
+  } catch (err) {
+    if (err.code !== 'auth/credential-already-in-use') throw err;
+    return signInWithCredential(auth, GoogleAuthProvider.credentialFromError(err));
+  }
 }
+
+export const signOutUser = () => signOut(auth);

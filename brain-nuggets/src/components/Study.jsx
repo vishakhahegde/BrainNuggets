@@ -35,7 +35,7 @@ function speakableText(tab, chunk, variant) {
   return null;
 }
 
-export default function Study({ uid, docId, prefs, setPrefs, comfortButton }) {
+export default function Study({ uid, docId, prefs, setPrefs, comfortButton, accountButton }) {
   const [doc, setDoc] = useState(undefined);
   const [chunks, setChunks] = useState([]);
   const [index, setIndex] = useState(null);
@@ -162,6 +162,7 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton }) {
               </button>
             )}
             {comfortButton}
+            {accountButton}
           </div>
         </header>
 
