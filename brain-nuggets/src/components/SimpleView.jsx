@@ -21,13 +21,6 @@ export default function SimpleView({ uid, docId, chunk, variant, onShowFirst }) 
         <span className="label">Think of it like this</span>
         <p><Highlight text={v.analogy} terms={terms} /></p>
       </div>
-      {terms?.length > 0 && (
-        <dl className="terms">
-          {terms.map((t) => (
-            <div key={t.term}><dt>{t.term}</dt><dd>{t.definition}</dd></div>
-          ))}
-        </dl>
-      )}
     </div>
   );
 }

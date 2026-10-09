@@ -7,6 +7,7 @@ import OriginalView from './OriginalView';
 import MindMap from './MindMap';
 import Quiz from './Quiz';
 import AskBox from './AskBox';
+import KeyTerms from './KeyTerms';
 import SprintTimer from './SprintTimer';
 
 const TABS = [
@@ -168,6 +169,8 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
           </div>
         </header>
 
+        <div className="study-content">
+        <div className="study-col">
         {finished ? (
           <section className="chunk finished">
             <h1>You finished this lecture.</h1>
@@ -213,10 +216,17 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
               </button>
             </div>
             {explainError && <p className="error-text" role="alert">{explainError}</p>}
-
-            <AskBox key={index} chunk={chunk} context={doc} />
           </>
         )}
+        </div>
+
+        {chunk && !finished && (
+          <aside className="study-rail" aria-label="Help for this chunk">
+            <KeyTerms terms={chunk.keyTerms} />
+            <AskBox key={index} chunk={chunk} context={doc} />
+          </aside>
+        )}
+        </div>
       </main>
     </div>
   );

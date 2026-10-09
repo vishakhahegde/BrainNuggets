@@ -236,8 +236,52 @@ a { color: var(--accent); }
   padding: 14px 0;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
-  max-width: var(--measure);
   flex-wrap: wrap;
+}
+.study-bar .account-name { display: none; }
+
+/* Reading column centred, with key terms and Ask in a side panel on wide screens. */
+.study-content {
+  display: grid;
+  grid-template-columns: minmax(0, var(--measure)) 300px;
+  gap: 48px;
+  justify-content: center;
+  align-items: start;
+  max-width: calc(var(--measure) + 348px);
+  margin: 0 auto;
+}
+.study-col { min-width: 0; }
+.study-rail {
+  position: sticky;
+  top: 96px;
+  margin-top: 36px;
+  max-height: calc(100vh - 120px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.key-terms { display: grid; gap: 10px; }
+.key-terms h2 { margin: 0; }
+.study-rail .terms { border-top: none; padding-top: 0; font-size: 15px; line-height: 1.5; gap: 12px; }
+.study-rail .terms div { grid-template-columns: 1fr; gap: 2px; }
+.study-rail .ask { margin-top: 0; padding-top: 20px; max-width: none; }
+.study-rail .ask form { grid-template-columns: minmax(0, 1fr); }
+.study-rail .ask input { width: 0; min-width: 0; flex: 1; }
+.study-bar .bar-actions .btn { padding-left: 12px; padding-right: 12px; }
+.study-rail .key-terms + .ask { border-top: 1px solid var(--border); }
+.study-rail .ask:only-child { border-top: none; padding-top: 0; }
+
+@media (max-width: 1279px) {
+  .study-content { grid-template-columns: minmax(0, var(--measure)); gap: 0; max-width: var(--measure); }
+  .study-rail { position: static; max-height: none; overflow: visible; background: none; border: none; border-radius: 0; padding: 0; margin-top: 48px; }
+  .study-rail .key-terms { padding-top: 18px; border-top: 1px solid var(--border); }
+  .study-rail .terms div { grid-template-columns: minmax(110px, auto) 1fr; gap: 14px; }
 }
 .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 4px; }
 .tab {
