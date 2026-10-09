@@ -6,7 +6,6 @@ export const DEFAULT_PREFS = {
   lineHeight: 1.8,
   background: 'cream',
   ruler: false,
-  reducedMotion: false,
   sprintMinutes: 15,
   speechRate: 0.95,
 };
@@ -22,7 +21,6 @@ function apply(p) {
   root.style.setProperty('--text-size', `${p.textSize}px`);
   root.style.setProperty('--line-height', p.lineHeight);
   root.dataset.bg = p.background;
-  root.dataset.motion = p.reducedMotion ? 'reduced' : 'full';
 }
 
 // Comfort settings: applied instantly from this browser, synced to Firestore per user.
