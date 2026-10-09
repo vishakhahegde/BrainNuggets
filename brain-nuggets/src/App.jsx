@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ensureUser } from './firebase';
+import { watchUser, signOutUser } from './firebase';
 import { usePrefs } from './prefs';
 import Library from './components/Library';
 import Study from './components/Study';
+import SignIn from './components/SignIn';
 import ComfortPanel from './components/ComfortPanel';
 import ReadingRuler from './components/ReadingRuler';
 
@@ -18,27 +19,18 @@ function useHashRoute() {
 }
 
 export default function App() {
-  const [uid, setUid] = useState(null);
-  const [authError, setAuthError] = useState(null);
+  // undefined = still checking, null = signed out.
+  const [user, setUser] = useState(undefined);
+  const signedIn = user && !user.isAnonymous;
+  const uid = signedIn ? user.uid : null;
   const [prefs, setPrefs] = usePrefs(uid);
   const [comfortOpen, setComfortOpen] = useState(false);
   const { docId } = useHashRoute();
 
-  useEffect(() => {
-    ensureUser().then((u) => setUid(u.uid)).catch((e) => setAuthError(e));
-  }, []);
+  useEffect(() => watchUser(setUser), []);
 
-  if (authError) {
-    return (
-      <main className="centered">
-        <div className="notice">
-          <h1>Can't connect to Firebase</h1>
-          <p>Anonymous sign-in failed ({authError.code}). Enable it in Firebase console → Authentication → Sign-in method → Anonymous.</p>
-        </div>
-      </main>
-    );
-  }
-  if (!uid) return <main className="centered"><p className="muted">Loading…</p></main>;
+  if (user === undefined) return <main className="centered"><p className="muted">Loading…</p></main>;
+  if (!signedIn) return <SignIn />;
 
   const comfortButton = (
     <button className="btn ghost" onClick={() => setComfortOpen(true)} aria-haspopup="dialog">
@@ -46,11 +38,21 @@ export default function App() {
     </button>
   );
 
+  const accountButton = (
+    <div className="account">
+      {user.photoURL && <img className="avatar" src={user.photoURL} alt="" referrerPolicy="no-referrer" />}
+      <span className="account-name">{user.displayName || user.email}</span>
+      <button className="btn ghost" onClick={() => { window.location.hash = ''; signOutUser(); }}>
+        Sign out
+      </button>
+    </div>
+  );
+
   return (
     <>
       {docId
-        ? <Study uid={uid} docId={docId} prefs={prefs} setPrefs={setPrefs} comfortButton={comfortButton} />
-        : <Library uid={uid} comfortButton={comfortButton} />}
+        ? <Study uid={uid} docId={docId} prefs={prefs} setPrefs={setPrefs} comfortButton={comfortButton} accountButton={accountButton} />
+        : <Library uid={uid} comfortButton={comfortButton} accountButton={accountButton} />}
       {comfortOpen && <ComfortPanel prefs={prefs} setPrefs={setPrefs} onClose={() => setComfortOpen(false)} />}
       {prefs.ruler && <ReadingRuler />}
     </>

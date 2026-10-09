@@ -51,7 +51,7 @@ function statusLine(d) {
   return { text: `${done} of ${d.chunkCount} chunks done · about ${d.totalMinutes} min total` };
 }
 
-export default function Library({ uid, comfortButton }) {
+export default function Library({ uid, comfortButton, accountButton }) {
   const [docs, setDocs] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [dragging, setDragging] = useState(false);
@@ -88,7 +88,10 @@ export default function Library({ uid, comfortButton }) {
     <div className="library">
       <header className="topbar">
         <span className="brand">Brain Nuggets{USING_LOCAL_DB && <span className="mode-tag">Local test mode</span>}</span>
-        {comfortButton}
+        <div className="bar-actions">
+          {comfortButton}
+          {accountButton}
+        </div>
       </header>
 
       <main className="library-main">
