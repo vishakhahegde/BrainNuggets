@@ -1,11 +1,27 @@
 import { useEffect, useState } from 'react';
 import { watchDocs, createDoc, patchDoc, saveChunk, removeDoc, USING_LOCAL_DB } from '../data';
 import { processPdf } from '../api';
+import { loadPdf, cropFigure } from '../figures';
 
 const STALE_MS = 10 * 60 * 1000;
 
+// Crops each figure the model picked; a figure that can't be cropped is dropped, never the chunk.
+async function cropChunkFigures(pdf, index, figures = []) {
+  const kept = [];
+  const images = [];
+  for (const f of figures) {
+    const src = pdf && await cropFigure(pdf, f.page, f.box).catch((e) => { console.warn('[figure]', e); return null; });
+    if (!src) continue;
+    const key = `${index}_${kept.length}`;
+    kept.push({ key, page: f.page, caption: f.caption, lookFor: f.lookFor, description: f.description });
+    images.push({ key, src });
+  }
+  return { figures: kept, images };
+}
+
 async function runPipeline(uid, file) {
   const id = await createDoc(uid, file.name);
+  const pdfReady = loadPdf(file).catch((e) => { console.warn('[figure] could not open PDF', e); return null; });
   let plan = [];
   let ready = 0;
   try {
@@ -23,7 +39,8 @@ async function runPipeline(uid, file) {
       } else if (event.type === 'chunk') {
         ready += 1;
         const { pages, minutes } = plan[event.index];
-        await saveChunk(uid, id, event.index, { ...event.chunk, pages, minutes }, ready);
+        const { figures, images } = await cropChunkFigures(await pdfReady, event.index, event.chunk.figures);
+        await saveChunk(uid, id, event.index, { ...event.chunk, figures, pages, minutes }, ready, images);
       } else if (event.type === 'done') {
         await patchDoc(uid, id, { status: 'ready' });
       } else if (event.type === 'error') {

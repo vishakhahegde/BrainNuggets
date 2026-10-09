@@ -30,7 +30,9 @@ function speakableText(tab, chunk, variant) {
   if (tab === 'original') return chunk.original;
   if (tab === 'simple') {
     const v = variant ?? chunk;
-    return [chunk.title, v.bigIdea, ...v.bullets, v.analogy].join('. ');
+    const fig = chunk.figures?.[0];
+    const picture = fig ? [`Picture: ${fig.caption}`, fig.description] : [];
+    return [chunk.title, v.bigIdea, ...picture, ...v.bullets, v.analogy].join('. ');
   }
   return null;
 }
@@ -188,12 +190,14 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
 
               {tab === 'simple' && (
                 <SimpleView
+                  uid={uid}
+                  docId={docId}
                   chunk={chunk}
                   variant={variant}
                   onShowFirst={showFirst}
                 />
               )}
-              {tab === 'original' && <OriginalView chunk={chunk} pageLabel={pageLabel(chunk.pages)} />}
+              {tab === 'original' && <OriginalView uid={uid} docId={docId} chunk={chunk} pageLabel={pageLabel(chunk.pages)} />}
               {tab === 'map' && <MindMap map={chunk.mindMap} />}
               {tab === 'quiz' && <Quiz key={index} uid={uid} docId={docId} chunkIndex={index} quiz={chunk.quiz} results={doc.quiz} />}
             </article>
