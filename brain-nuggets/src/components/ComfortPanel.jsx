@@ -73,12 +73,6 @@ export default function ComfortPanel({ prefs, setPrefs, onClose }) {
           <span>Reading ruler</span>
         </label>
 
-        <label className="toggle">
-          <input type="checkbox" checked={prefs.reducedMotion}
-            onChange={(e) => setPrefs({ reducedMotion: e.target.checked })} />
-          <span>Reduce motion</span>
-        </label>
-
         <button className="link reset" onClick={() => setPrefs(DEFAULT_PREFS)}>Reset to defaults</button>
       </div>
     </div>
