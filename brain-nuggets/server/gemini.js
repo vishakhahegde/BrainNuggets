@@ -110,12 +110,6 @@ const CHUNK_SCHEMA = {
   required: ['title', 'bigIdea', 'bullets', 'analogy', 'keyTerms', 'original', 'mindMap', 'quiz'],
 };
 
-const EXPLAIN_SCHEMA = {
-  type: 'object',
-  properties: EXPLANATION_PROPS,
-  required: ['bigIdea', 'bullets', 'analogy'],
-};
-
 const ANSWER_SCHEMA = {
   type: 'object',
   properties: {
@@ -277,31 +271,6 @@ Do not repeat material that belongs to other chunks.`,
 const figureText = (chunk) =>
   arr(chunk.figures).map((f, i) => `Figure ${i + 1} (page ${f.page}): ${f.caption} ${f.description}`).join('\n');
 
-const STYLES = {
-  story: 'Explain it as a short story with a character who runs into this idea.',
-  example: 'Explain it through one concrete, real-world example the student has likely seen.',
-  steps: 'Explain it as a numbered sequence of simple steps, one action each.',
-  picture: 'Explain it by describing a simple picture or diagram the student can imagine.',
-};
-
-export function explainDifferently(chunk, style) {
-  return generate(
-    [
-      {
-        text: `A student did not understand this explanation:
-${JSON.stringify({ title: chunk.title, bigIdea: chunk.bigIdea, bullets: chunk.bullets, analogy: chunk.analogy })}
-
-Source text:
-${chunk.original}
-${figureText(chunk) && `\nFigures shown to the student:\n${figureText(chunk)}\n`}
-Re-explain the same idea in a completely different way. ${STYLES[style] ?? STYLES.example}
-Use a new analogy. Keep bullets to exactly 3. Do not say the previous explanation was confusing.`,
-      },
-    ],
-    EXPLAIN_SCHEMA,
-  );
-}
-
 export function askTutor(question, chunk, context) {
   return generate(
     [
@@ -327,4 +296,3 @@ Question: ${question}`,
   );
 }
 
-export const STYLE_KEYS = Object.keys(STYLES);

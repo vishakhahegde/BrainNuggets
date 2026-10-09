@@ -1,14 +1,17 @@
-// The chunk's key terms with plain definitions, kept in view on every tab.
+// The chunk's key terms: just the names, each opening to its plain definition.
 export default function KeyTerms({ terms }) {
   if (!terms?.length) return null;
   return (
-    <section className="key-terms" aria-labelledby="key-terms-title">
-      <h2 id="key-terms-title" className="label">Key terms</h2>
-      <dl className="terms">
+    <section className="key-terms rail-card" aria-labelledby="key-terms-title">
+      <h2 id="key-terms-title" className="label">Key terms <span className="count">· {terms.length}</span></h2>
+      <div className="term-list">
         {terms.map((t) => (
-          <div key={t.term}><dt>{t.term}</dt><dd>{t.definition}</dd></div>
+          <details key={t.term} className="term-item">
+            <summary>{t.term}</summary>
+            <p>{t.definition}</p>
+          </details>
         ))}
-      </dl>
+      </div>
     </section>
   );
 }

@@ -9,7 +9,6 @@ async function post(path, body) {
   return data;
 }
 
-export const explainDifferently = (chunk, style) => post('/api/explain', { chunk, style });
 export const askTutor = (question, chunk, context) => post('/api/ask', { question, chunk, context });
 
 // Uploads a PDF and calls onEvent for each NDJSON event the server streams back.

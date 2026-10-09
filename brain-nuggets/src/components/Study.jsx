@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { watchDoc, watchChunks, markDone, setCurrent } from '../data';
-import { explainDifferently } from '../api';
 import { useSpeech } from '../speech';
 import SimpleView from './SimpleView';
 import OriginalView from './OriginalView';
@@ -17,20 +16,13 @@ const TABS = [
   { id: 'quiz', label: 'Quiz' },
 ];
 
-const STYLES = [
-  { id: 'example', label: 'a real-world example' },
-  { id: 'story', label: 'a story' },
-  { id: 'steps', label: 'steps' },
-  { id: 'picture', label: 'a picture' },
-];
-
 const pageLabel = (pages = []) =>
   !pages.length ? '' : pages.length === 1 ? `page ${pages[0]}` : `pages ${pages[0]}–${pages[pages.length - 1]}`;
 
-function speakableText(tab, chunk, variant) {
+function speakableText(tab, chunk) {
   if (tab === 'original') return chunk.original;
   if (tab === 'simple') {
-    const v = variant ?? chunk;
+    const v = chunk;
     const fig = chunk.figures?.[0];
     const picture = fig ? [`Picture: ${fig.caption}`, fig.description] : [];
     return [chunk.title, v.bigIdea, ...picture, ...v.bullets, v.analogy].join('. ');
@@ -43,9 +35,6 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
   const [chunks, setChunks] = useState([]);
   const [index, setIndex] = useState(null);
   const [tab, setTab] = useState('simple');
-  const [variants, setVariants] = useState({});
-  const [explaining, setExplaining] = useState(false);
-  const [explainError, setExplainError] = useState(null);
   const [finished, setFinished] = useState(false);
   const speech = useSpeech(prefs.speechRate);
   const mainRef = useRef();
@@ -68,15 +57,12 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
   if (!doc || index === null) return <main className="centered"><p className="muted">Loading…</p></main>;
 
   const chunk = chunks[index];
-  const vState = variants[index];
-  const variant = vState?.showing ? vState.items[vState.showing - 1] : null;
   const done = new Set(doc.done ?? []);
   const pct = doc.chunkCount ? Math.round((done.size / doc.chunkCount) * 100) : 0;
 
   const goTo = (i) => {
     setIndex(i);
     setTab('simple');
-    setExplainError(null);
     setFinished(false);
     setCurrent(uid, docId, i).catch(() => {});
     mainRef.current?.scrollTo({ top: 0 });
@@ -89,26 +75,7 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
     else goTo(index + 1);
   };
 
-  const explain = async () => {
-    const tried = vState?.items.length ?? 0;
-    const style = STYLES[tried % STYLES.length];
-    setExplaining(true);
-    setExplainError(null);
-    try {
-      const result = await explainDifferently(chunk, style.id);
-      setVariants((v) => {
-        const items = [...(v[index]?.items ?? []), { ...result, styleLabel: style.label }];
-        return { ...v, [index]: { items, showing: items.length } };
-      });
-    } catch (e) {
-      setExplainError(e.message);
-    } finally {
-      setExplaining(false);
-    }
-  };
-
-  const showFirst = () => setVariants((v) => ({ ...v, [index]: { ...v[index], showing: 0 } }));
-  const toRead = chunk && speakableText(tab, chunk, variant);
+  const toRead = chunk && speakableText(tab, chunk);
 
   return (
     <div className="study">
@@ -196,8 +163,6 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
                   uid={uid}
                   docId={docId}
                   chunk={chunk}
-                  variant={variant}
-                  onShowFirst={showFirst}
                 />
               )}
               {tab === 'original' && <OriginalView uid={uid} docId={docId} chunk={chunk} pageLabel={pageLabel(chunk.pages)} />}
@@ -206,16 +171,10 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
             </article>
 
             <div className="chunk-actions">
-              {tab === 'simple' && (
-                <button className="btn secondary" onClick={explain} disabled={explaining}>
-                  {explaining ? 'Thinking of another way…' : 'Explain differently'}
-                </button>
-              )}
               <button className="btn primary big" onClick={gotIt}>
                 {index === doc.chunkCount - 1 ? 'Got it, finish' : 'Got it, next chunk'}
               </button>
             </div>
-            {explainError && <p className="error-text" role="alert">{explainError}</p>}
           </>
         )}
         </div>
@@ -223,7 +182,9 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
         {chunk && !finished && (
           <aside className="study-rail" aria-label="Help for this chunk">
             <KeyTerms terms={chunk.keyTerms} />
-            <AskBox key={index} chunk={chunk} context={doc} />
+            <div className="rail-card">
+              <AskBox key={index} chunk={chunk} context={doc} />
+            </div>
           </aside>
         )}
         </div>
