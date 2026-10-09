@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 const BREAK_MIN = 5;
 const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -21,6 +22,9 @@ export default function SprintTimer({ minutes, setMinutes }) {
     if (mode === 'running') setMode('done');
     if (mode === 'break') setMode('idle');
   }, [left, mode]);
+
+  const backRef = useRef();
+  useEffect(() => { if (mode === 'break') backRef.current?.focus(); }, [mode]);
 
   const startBreak = () => { setLeft(BREAK_MIN * 60); setMode('break'); };
   const reset = () => { setMode('idle'); setLeft(minutes * 60); };
@@ -61,13 +65,15 @@ export default function SprintTimer({ minutes, setMinutes }) {
         <button className="link" onClick={startBreak}>Take a break now</button>
       )}
 
-      {mode === 'break' && (
+      {/* Rendered on <body> so it covers the whole page, not just the sidebar. */}
+      {mode === 'break' && createPortal(
         <div className="break-screen" role="dialog" aria-modal="true" aria-label="Break">
           <p className="label">Break</p>
           <p className="break-time">{fmt(left)}</p>
           <p className="muted">Step away from the screen. Your place is saved.</p>
-          <button className="btn primary big" onClick={reset}>Back to studying</button>
-        </div>
+          <button ref={backRef} className="btn primary big" onClick={reset}>Back to studying</button>
+        </div>,
+        document.body,
       )}
     </div>
   );

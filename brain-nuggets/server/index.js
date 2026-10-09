@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { buildContext, buildChunk, explainDifferently, askTutor, STYLE_KEYS } from './gemini.js';
+import { buildContext, buildChunk, askTutor } from './gemini.js';
 
 const PORT = process.env.API_PORT || 3104;
 const MAX_MB = 18; // Gemini inline request limit is ~20MB
@@ -50,17 +50,6 @@ app.post('/api/process', upload.single('pdf'), async (req, res) => {
     send({ type: 'error', message: friendlyError(err) });
   }
   res.end();
-});
-
-app.post('/api/explain', async (req, res) => {
-  const { chunk, style } = req.body;
-  if (!chunk || !STYLE_KEYS.includes(style)) return res.status(400).json({ error: 'Bad request' });
-  try {
-    res.json(await explainDifferently(chunk, style));
-  } catch (err) {
-    console.error('[explain]', err);
-    res.status(502).json({ error: friendlyError(err) });
-  }
 });
 
 app.post('/api/ask', async (req, res) => {
