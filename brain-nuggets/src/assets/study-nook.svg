@@ -1,4 +1,4 @@
-<svg viewBox="0 0 820 860" xmlns="http://www.w3.org/2000/svg" >
+<svg viewBox="-10 0 860 870" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#6e5a9c"/><stop offset=".55" stop-color="#b9a6d6"/><stop offset="1" stop-color="#f6c7a6"/>
@@ -84,14 +84,14 @@
     <rect x="60" y="584" width="20" height="18" rx="6" fill="#ee6f57"/><rect x="130" y="584" width="20" height="18" rx="6" fill="#ee6f57"/>
   </g>
   <g>
-    <path d="M40 860c-20-90 20-190 120-230 40 70 30 170-40 230z" fill="#ee6f57"/>
-    <path d="M60 852c20-70 50-130 96-200" fill="none" stroke="#c94f3a" stroke-width="4"/>
-    <path d="M150 860c10-80 70-140 150-150-10 70-60 130-150 150z" fill="#f29bc6"/>
-    <path d="M160 856c40-50 80-90 132-136" fill="none" stroke="#d97aa7" stroke-width="3"/>
-    <path d="M0 760c50-40 120-40 160 0-50 30-110 30-160 0z" fill="#e8b33c"/>
-    <path d="M10 760h140" stroke="#c9952a" stroke-width="3"/>
-    <g fill="none" stroke="#8fae7e" stroke-width="5" stroke-linecap="round"><path d="M760 860c10-120 40-220 50-320"/></g>
-    <g fill="#8fae7e"><path d="M770 760c-40-20-60-50-56-84 34 14 54 44 56 84z"/><path d="M780 690c40-14 56-44 52-80-32 16-50 46-52 80z"/><path d="M786 620c-34-24-46-56-38-88 28 20 40 52 38 88z"/></g>
-    <path d="M700 860c0-60 40-110 100-120 0 60-40 110-100 120z" fill="#ee6f57"/>
+    <path d="M72 848C34 770 82 686 170 642c18 82-14 160-98 206z" fill="#ee6f57"/>
+    <path d="M78 840c22-64 50-130 88-190" fill="none" stroke="#c94f3a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M166 852c6-70 56-120 136-136-6 72-56 122-136 136z" fill="#f29bc6"/>
+    <path d="M172 846c36-46 74-86 124-124" fill="none" stroke="#d97aa7" stroke-width="3" stroke-linecap="round"/>
+    <path d="M6 770c50-36 118-36 160 2-48 30-114 30-160-2z" fill="#e8b33c"/>
+    <path d="M16 771h140" stroke="#c9952a" stroke-width="3" stroke-linecap="round"/>
+    <path d="M770 852c8-110 32-210 44-312" fill="none" stroke="#8fae7e" stroke-width="5" stroke-linecap="round"/>
+    <g fill="#8fae7e"><path d="M774 760c-40-20-60-50-56-84 34 14 54 44 56 84z"/><path d="M784 690c40-14 56-44 52-80-32 16-50 46-52 80z"/><path d="M790 620c-34-24-46-56-38-88 28 20 40 52 38 88z"/></g>
+    <path d="M712 852c2-56 38-92 92-104 0 54-36 92-92 104z" fill="#ee6f57"/>
   </g>
 </svg>

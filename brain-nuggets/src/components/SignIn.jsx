@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { signInWithGoogle } from '../firebase';
 import studyNook from '../assets/study-nook.svg';
+import stepUpload from '../assets/step-upload.svg';
+import stepLearn from '../assets/step-learn.svg';
+import stepQuiz from '../assets/step-quiz.svg';
+
+const STEPS = [
+  { img: stepUpload, text: 'Upload a lecture PDF' },
+  { img: stepLearn, text: 'Learn one chunk at a time' },
+  { img: stepQuiz, text: 'Check yourself with a quiz' },
+];
 
 function friendlyError(err) {
   if (err.code === 'auth/popup-blocked') return 'Your browser blocked the sign-in window. Allow popups for this site and try again.';
@@ -30,6 +39,7 @@ export default function SignIn() {
 
   return (
     <main className="landing">
+      <div className="landing-top">
       <section className="landing-hero">
         <h1 className="landing-title">Brain<br />Nuggets</h1>
         <p className="landing-tagline">Big lectures, broken into bite-sized nuggets.</p>
@@ -50,6 +60,21 @@ export default function SignIn() {
         </div>
       </section>
       <img className="landing-art" src={studyNook} alt="" />
+      </div>
+
+      <section className="how" aria-labelledby="how-title">
+        <h2 id="how-title" className="how-title">How it works</h2>
+        <p className="how-sub">Less overwhelm. One little nugget at a time.</p>
+        <ol className="how-steps">
+          {STEPS.map((s, i) => (
+            <li key={s.text} className="how-step">
+              <span className="how-num" aria-hidden="true">{i + 1}</span>
+              <img src={s.img} alt="" />
+              <p>{s.text}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
     </main>
   );
 }
