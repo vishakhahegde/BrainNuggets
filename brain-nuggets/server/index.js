@@ -1,8 +1,11 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import multer from 'multer';
 import { buildContext, buildChunk, askTutor } from './gemini.js';
 
-const PORT = process.env.API_PORT || 3104;
+// Cloud Run sets PORT; locally the Vite dev server proxies /api to 3104.
+const PORT = process.env.PORT || process.env.API_PORT || 3104;
 const MAX_MB = 18; // Gemini inline request limit is ~20MB
 const CONCURRENCY = 3;
 
@@ -63,10 +66,17 @@ app.post('/api/ask', async (req, res) => {
   }
 });
 
+// In production the built React app is served from here too (one Cloud Run service).
+const DIST = fileURLToPath(new URL('../dist', import.meta.url));
+if (existsSync(DIST)) {
+  app.use(express.static(DIST));
+  app.get('/{*splat}', (req, res, next) => (req.path.startsWith('/api') ? next() : res.sendFile('index.html', { root: DIST })));
+}
+
 app.use((err, _req, res, _next) => {
   if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: `PDFs must be under ${MAX_MB}MB.` });
   console.error(err);
   res.status(500).json({ error: 'Server error' });
 });
 
-app.listen(PORT, () => console.log(`API on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
