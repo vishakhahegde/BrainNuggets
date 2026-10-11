@@ -133,7 +133,14 @@ a { color: var(--accent); }
 }
 .brand { font-weight: 600; font-size: 17px; }
 
-.library-main { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+.library { min-height: 100vh; display: flex; flex-direction: column; }
+.library-shelf {
+  display: block; width: 100%; height: auto; margin-top: -12vw; pointer-events: none;
+  /* The art's empty sky tucks under the content; fade its top edge so it meets the page without a seam. */
+  -webkit-mask-image: linear-gradient(transparent, #000 28%);
+  mask-image: linear-gradient(transparent, #000 28%);
+}
+.library-main { position: relative; z-index: 1; flex: 1; width: 100%; max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
 .library-main h1 { font-size: 28px; margin-bottom: 24px; }
 .library-main .notice { margin-top: 20px; max-width: none; }
 

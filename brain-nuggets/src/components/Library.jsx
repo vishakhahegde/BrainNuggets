@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { watchDocs, createDoc, patchDoc, saveChunk, removeDoc, USING_LOCAL_DB } from '../data';
 import { processPdf } from '../api';
 import { loadPdf, cropFigure } from '../figures';
+import shelfArt from '../assets/library-shelf.webp';
 
 const STALE_MS = 10 * 60 * 1000;
 
@@ -175,6 +176,7 @@ export default function Library({ uid, accountButton }) {
           </ul>
         )}
       </main>
+      <img className="library-shelf" src={shelfArt} alt="" />
     </div>
   );
 }
