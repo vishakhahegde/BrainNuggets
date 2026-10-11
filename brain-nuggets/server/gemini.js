@@ -84,7 +84,7 @@ const CHUNK_SCHEMA = {
         type: 'object',
         properties: {
           page: { type: 'integer', description: '1-based PDF page the figure is on.' },
-          box: { type: 'array', items: { type: 'integer' }, description: 'Box around the whole figure including every label, leader line, legend, axis label and title: [ymin, xmin, ymax, xmax], each 0-1000 relative to the page. If unsure, make it slightly larger rather than cutting off a label.' },
+          box: { type: 'array', items: { type: 'integer' }, description: 'Tight box around just the figure: the drawing plus its labels, leader lines, legend and axis labels. Exclude surrounding paragraphs, the figure caption and page headers. [ymin, xmin, ymax, xmax], each 0-1000 relative to the page.' },
           caption: { ...str, description: 'What the picture shows, in one plain sentence.' },
           lookFor: { ...strArr, description: '2 or 3 very short pointers on where to look first (under 10 words each).' },
           description: { ...str, description: 'A full plain description of the picture for someone who cannot see it.' },
@@ -258,7 +258,7 @@ Write chunk ${index + 1}: "${item.title}" (pages ${item.pages.join(', ')}). Big 
 - keyTerms: 2 to 5 subject-specific terms a struggling student might not know (never everyday words like "cells" or "energy"). Each must appear word-for-word in bigIdea or bullets. Give a one-line plain definition.
 - original: the matching source text copied verbatim from the PDF.
 - mindMap: the big idea at the center, 2 to 4 branches, each with 1 to 3 very short children (under 6 words).
-- figures: 0 to 2 diagrams, charts, tables or photos from pages ${item.pages.join(', ')} that genuinely help a student grasp the big idea, most important first. Skip logos, decorations and slide backgrounds. Give a box that encloses the whole figure including all of its labels, leader lines, legend and title (never cut a label off; a little extra space is fine), a one-sentence caption, 2 to 3 short "look for" pointers, and a plain description someone could follow without seeing it. Use an empty list if no figure helps.
+- figures: 0 to 2 diagrams, charts, tables or photos from pages ${item.pages.join(', ')} that genuinely help a student grasp the big idea, most important first. Skip logos, decorations and slide backgrounds. Give a tight box around just the figure: the drawing with its labels, leader lines and legend, but none of the surrounding paragraphs, the caption line or page headers, a one-sentence caption, 2 to 3 short "look for" pointers, and a plain description someone could follow without seeing it. Use an empty list if no figure helps.
 - quiz: 2 multiple-choice questions with 3 options each. Test understanding, not memorised wording. Keep the tone low-stakes.
 Do not repeat material that belongs to other chunks.`,
       },
