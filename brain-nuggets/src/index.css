@@ -188,6 +188,28 @@ a { color: var(--accent); }
   flex-direction: column;
   gap: 18px;
 }
+/* Sidebar head: back link plus the hide/show toggle. */
+.side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sidebar-toggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.sidebar-toggle:hover { color: var(--accent); border-color: var(--accent); }
+/* Hiding applies on wide screens only; on phones the sidebar is stacked and always shown. */
+@media (min-width: 861px) {
+  .study.collapsed { grid-template-columns: 60px 1fr; }
+  .study.collapsed .sidebar { padding: 22px 11px; }
+  .study.collapsed .sidebar > :not(.side-head), .study.collapsed .side-head .back-link { display: none; }
+}
 .back-link { text-decoration: none; font-weight: 500; min-height: 32px; display: inline-flex; align-items: center; }
 .side-title { font-size: 18px; }
 .side-progress { display: grid; gap: 8px; font-size: 14px; }
@@ -591,6 +613,7 @@ a { color: var(--accent); }
 
 @media (max-width: 860px) {
   .study { grid-template-columns: 1fr; }
+  .sidebar-toggle { display: none; }
   .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
   .chunk-list { max-height: 220px; overflow-y: auto; }
   .study-main { padding: 0 16px 60px; }
