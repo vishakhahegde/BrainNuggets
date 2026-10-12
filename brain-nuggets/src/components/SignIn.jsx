@@ -18,6 +18,36 @@ function friendlyError(err) {
   return 'Sign-in didn’t work. Please try again.';
 }
 
+// The landing page. `cta` is what sits under the tagline: sign-in when signed out, shortcuts when signed in.
+export function Landing({ cta, className = '' }) {
+  return (
+    <main className={`landing ${className}`.trim()}>
+      <div className="landing-top">
+      <section className="landing-hero">
+        <h1 className="landing-title">Brain<br />Nuggets</h1>
+        <p className="landing-tagline">Big lectures, broken into bite-sized nuggets.</p>
+        <div className="landing-cta">{cta}</div>
+      </section>
+      <img className="landing-art" src={studyNook} alt="" />
+      </div>
+
+      <section className="how" aria-labelledby="how-title">
+        <h2 id="how-title" className="how-title">How it works</h2>
+        <p className="how-sub">Less overwhelm. One little nugget at a time.</p>
+        <ol className="how-steps">
+          {STEPS.map((s, i) => (
+            <li key={s.text} className="how-step">
+              <span className="how-num" aria-hidden="true">{i + 1}</span>
+              <img src={s.img} alt="" />
+              <p>{s.text}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+    </main>
+  );
+}
+
 export default function SignIn() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -38,12 +68,9 @@ export default function SignIn() {
   };
 
   return (
-    <main className="landing">
-      <div className="landing-top">
-      <section className="landing-hero">
-        <h1 className="landing-title">Brain<br />Nuggets</h1>
-        <p className="landing-tagline">Big lectures, broken into bite-sized nuggets.</p>
-        <div className="landing-cta">
+    <Landing
+      cta={
+        <>
           <button className="btn primary landing-btn" onClick={signIn} disabled={busy}>
             <span className="google-g" aria-hidden="true">
               <svg width="18" height="18" viewBox="0 0 24 24">
@@ -57,24 +84,8 @@ export default function SignIn() {
           </button>
           <p className="muted landing-hint">Sign in to keep your lessons on any device.</p>
           {error && <p className="error-text" role="alert">{error}</p>}
-        </div>
-      </section>
-      <img className="landing-art" src={studyNook} alt="" />
-      </div>
-
-      <section className="how" aria-labelledby="how-title">
-        <h2 id="how-title" className="how-title">How it works</h2>
-        <p className="how-sub">Less overwhelm. One little nugget at a time.</p>
-        <ol className="how-steps">
-          {STEPS.map((s, i) => (
-            <li key={s.text} className="how-step">
-              <span className="how-num" aria-hidden="true">{i + 1}</span>
-              <img src={s.img} alt="" />
-              <p>{s.text}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-    </main>
+        </>
+      }
+    />
   );
 }

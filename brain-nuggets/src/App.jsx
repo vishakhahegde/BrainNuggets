@@ -6,6 +6,7 @@ import Study from './components/Study';
 import Assignments from './components/Assignments';
 import AssignmentWork from './components/AssignmentWork';
 import SignIn from './components/SignIn';
+import Home from './components/Home';
 import ComfortPanel from './components/ComfortPanel';
 import ReadingRuler from './components/ReadingRuler';
 
@@ -20,7 +21,7 @@ function useHashRoute() {
   if (doc) return { docId: doc[1] };
   const assignment = hash.match(/^#\/assignment\/([^/]+)/);
   if (assignment) return { assignmentId: assignment[1] };
-  return { assignments: /^#\/assignments\/?$/.test(hash) };
+  return { assignments: /^#\/assignments\/?$/.test(hash), home: /^#\/home\/?$/.test(hash) };
 }
 
 export default function App() {
@@ -30,7 +31,7 @@ export default function App() {
   const uid = signedIn ? user.uid : null;
   const [prefs, setPrefs] = usePrefs(uid);
   const [comfortOpen, setComfortOpen] = useState(false);
-  const { docId, assignmentId, assignments } = useHashRoute();
+  const { docId, assignmentId, assignments, home } = useHashRoute();
 
   useEffect(() => watchUser(setUser), []);
 
@@ -57,6 +58,7 @@ export default function App() {
     <>
       {docId ? <Study uid={uid} docId={docId} prefs={prefs} setPrefs={setPrefs} comfortButton={comfortButton} accountButton={accountButton} />
         : assignmentId ? <AssignmentWork key={assignmentId} uid={uid} assignmentId={assignmentId} comfortButton={comfortButton} accountButton={accountButton} />
+        : home ? <Home name={user.displayName} accountButton={accountButton} />
         : assignments ? <Assignments uid={uid} accountButton={accountButton} />
         : <Library uid={uid} accountButton={accountButton} />}
       {comfortOpen && <ComfortPanel prefs={prefs} setPrefs={setPrefs} onClose={() => setComfortOpen(false)} />}
