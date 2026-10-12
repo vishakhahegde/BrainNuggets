@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { signInWithGoogle } from '../firebase';
-import studyNook from '../assets/study-nook.svg';
+import studyNook from '../assets/study-nook.webp';
 import stepUpload from '../assets/step-upload.svg';
 import stepLearn from '../assets/step-learn.svg';
 import stepQuiz from '../assets/step-quiz.svg';
