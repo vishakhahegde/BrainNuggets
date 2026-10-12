@@ -8,4 +8,5 @@ const impl = USING_LOCAL_DB ? local : firestore;
 export const {
   watchDocs, watchDoc, watchChunks, createDoc, patchDoc, saveChunk,
   markDone, setCurrent, saveQuizResult, removeDoc, loadPrefs, savePrefs, loadFigure,
+  watchAssignments, watchAssignment, createAssignment, patchAssignment, removeAssignment,
 } = impl;

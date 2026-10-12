@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import multer from 'multer';
-import { buildContext, buildChunk, askTutor } from './gemini.js';
+import { buildContext, buildChunk, askTutor, breakdownAssignment, splitTask } from './gemini.js';
 
 // Cloud Run sets PORT; locally the Vite dev server proxies /api to 3104.
 const PORT = process.env.PORT || process.env.API_PORT || 3104;
@@ -66,6 +66,38 @@ app.post('/api/ask', async (req, res) => {
   }
 });
 
+const BRIEF_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Turns an assignment (typed brief and/or the assignment sheet) into small tasks.
+app.post('/api/breakdown', upload.single('file'), async (req, res) => {
+  const { title = '', brief = '', dueDate = '', today = '' } = req.body ?? {};
+  const minutesPerDay = Number(req.body?.minutesPerDay) || 30;
+  if (req.file && !BRIEF_TYPES.includes(req.file.mimetype)) {
+    return res.status(400).json({ error: 'Add the assignment sheet as a PDF or a photo (PNG, JPG or WebP).' });
+  }
+  if (!brief.trim() && !req.file) return res.status(400).json({ error: 'Tell us what the assignment is, or add the assignment sheet.' });
+  const days = dueDate && today ? Math.max(1, Math.round((Date.parse(dueDate) - Date.parse(today)) / DAY_MS)) : 0;
+  try {
+    const file = req.file && { mimeType: req.file.mimetype, base64: req.file.buffer.toString('base64') };
+    res.json(await breakdownAssignment({ title: title.trim(), brief: brief.trim().slice(0, 20000), file, days, minutesPerDay }));
+  } catch (err) {
+    console.error('[breakdown]', err);
+    res.status(502).json({ error: friendlyError(err) });
+  }
+});
+
+app.post('/api/split-task', async (req, res) => {
+  const { task, assignment } = req.body ?? {};
+  if (!task?.title) return res.status(400).json({ error: 'Bad request' });
+  try {
+    res.json(await splitTask(task, assignment));
+  } catch (err) {
+    console.error('[split-task]', err);
+    res.status(502).json({ error: friendlyError(err) });
+  }
+});
+
 // In production the built React app is served from here too (one Cloud Run service).
 const DIST = fileURLToPath(new URL('../dist', import.meta.url));
 if (existsSync(DIST)) {
@@ -74,7 +106,7 @@ if (existsSync(DIST)) {
 }
 
 app.use((err, _req, res, _next) => {
-  if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: `PDFs must be under ${MAX_MB}MB.` });
+  if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: `Files must be under ${MAX_MB}MB.` });
   console.error(err);
   res.status(500).json({ error: 'Server error' });
 });

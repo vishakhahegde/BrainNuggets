@@ -111,3 +111,39 @@ export async function savePrefs(uid, prefs) {
   user(uid).prefs = prefs;
   commit();
 }
+
+const assignments = (uid) => (user(uid).assignments ??= {});
+
+export function watchAssignments(uid, cb) {
+  return listen(() => {
+    const list = Object.entries(assignments(uid)).map(([id, a]) => view(id, a));
+    cb(list.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()));
+  });
+}
+
+export function watchAssignment(uid, id, cb) {
+  return listen(() => {
+    const a = assignments(uid)[id];
+    cb(a ? view(id, a) : null);
+  });
+}
+
+export async function createAssignment(uid, data) {
+  const id = Math.random().toString(36).slice(2, 12);
+  const now = Date.now();
+  assignments(uid)[id] = { ...data, createdAt: now, updatedAt: now };
+  commit();
+  return id;
+}
+
+export async function patchAssignment(uid, id, data) {
+  const a = assignments(uid)[id];
+  if (!a) return;
+  Object.assign(a, data, { updatedAt: Date.now() });
+  commit();
+}
+
+export async function removeAssignment(uid, id) {
+  delete assignments(uid)[id];
+  commit();
+}

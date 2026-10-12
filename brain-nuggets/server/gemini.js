@@ -296,3 +296,106 @@ Question: ${question}`,
   );
 }
 
+
+const TASK_ITEM = {
+  type: 'object',
+  properties: {
+    title: { ...str, description: 'One concrete action, starting with a verb. Under 12 words.' },
+    doneWhen: { ...str, description: 'How the student knows this task is finished. One short sentence.' },
+    minutes: { type: 'integer', description: 'Minutes this takes a student who works slowly. 5 to 15, usually 10.' },
+  },
+  required: ['title', 'doneWhen', 'minutes'],
+};
+
+const BREAKDOWN_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: { ...str, description: 'A short name for the assignment.' },
+    summary: { ...str, description: 'One plain sentence on what the finished assignment is.' },
+    steps: {
+      type: 'array',
+      description: 'The stages of the work in order, e.g. Understand, Research, Plan, Write, Check.',
+      items: {
+        type: 'object',
+        properties: { name: { ...str, description: 'One or two words.' }, tasks: { type: 'array', items: TASK_ITEM } },
+        required: ['name', 'tasks'],
+      },
+    },
+  },
+  required: ['title', 'summary', 'steps'],
+};
+
+const SPLIT_SCHEMA = {
+  type: 'object',
+  properties: { tasks: { type: 'array', items: TASK_ITEM } },
+  required: ['tasks'],
+};
+
+const TASK_RULES = `Rules for every task:
+- One concrete physical action the student can start right now, written as a verb ("Write", "Find", "Read", "List").
+- Small: 5 to 15 minutes for a student who works slowly, aiming for 10.
+- A clear finish line in doneWhen, so the student knows when to stop.
+- Simple words and short sentences.
+- You break the work down. You never do the work: no answers, no facts to use, no sample sentences or paragraphs.`;
+
+const MAX_TASKS = 60;
+const clampMinutes = (m, lo, hi) => Math.min(hi, Math.max(lo, Math.round(Number(m)) || 10));
+
+function normalizeTasks(tasks, maxMinutes = 15) {
+  return arr(tasks)
+    .filter((t) => typeof t?.title === 'string' && t.title.trim())
+    .map((t) => ({ title: t.title.trim(), doneWhen: String(t.doneWhen ?? '').trim(), minutes: clampMinutes(t.minutes, 2, maxMinutes) }));
+}
+
+function normalizeBreakdown(b) {
+  let left = MAX_TASKS;
+  const steps = arr(b.steps)
+    .map((s) => ({ name: String(s?.name ?? '').trim() || 'Work', tasks: normalizeTasks(s?.tasks) }))
+    .map((s) => { const tasks = s.tasks.slice(0, Math.max(0, left)); left -= tasks.length; return { ...s, tasks }; })
+    .filter((s) => s.tasks.length);
+  if (!steps.length) throw new Error('Couldn’t break that assignment into tasks. Add a little more detail and try again.');
+  // The first task is a tiny starter, so beginning never feels big.
+  steps[0].tasks[0].minutes = Math.min(steps[0].tasks[0].minutes, 5);
+  return { title: String(b.title ?? '').trim(), summary: String(b.summary ?? '').trim(), steps };
+}
+
+// Slices an assignment into ~10-minute tasks. The brief can be typed, a file (PDF or image), or both.
+export async function breakdownAssignment({ title, brief, file, days, minutesPerDay }) {
+  const parts = [];
+  if (file) parts.push({ inlineData: { mimeType: file.mimeType, data: file.base64 } });
+  parts.push({
+    text: `A student has this assignment and doesn't know where to start. Break it into tiny tasks they can do one at a time.
+${file ? 'The attached file is the assignment sheet. Read all of it, including any marking criteria.\n' : ''}
+Assignment title: ${title || '(not given)'}
+${brief ? `What the teacher asked:\n${brief}\n` : ''}
+${days ? `They have ${days} day(s) and about ${minutesPerDay} minutes a day. Size the plan to fit that if the work allows, but never leave out a required part.\n` : ''}
+Group the tasks into 3 to 6 steps in the order the work happens (for example Understand, Research, Plan, Write, Check).
+The very first task must be a tiny 2 to 5 minute starter, such as opening a document and typing the question at the top.
+Cover everything the assignment needs, including re-reading the brief at the start and a final check against it at the end.
+${TASK_RULES}`,
+  });
+  return normalizeBreakdown(await generate(parts, BREAKDOWN_SCHEMA));
+}
+
+// Replaces one task that still feels too big with 2-3 smaller ones.
+export async function splitTask(task, assignment) {
+  const res = await generate(
+    [
+      {
+        text: `A student is stuck on one task from their assignment because it feels too big. Split it into 2 or 3 smaller tasks that together do the same job.
+
+Assignment: ${assignment?.title ?? ''}${assignment?.summary ? ` (${assignment.summary})` : ''}
+Step: ${assignment?.step ?? ''}
+Task: ${task.title}
+Done when: ${task.doneWhen}
+
+Each new task should take 3 to 8 minutes.
+${TASK_RULES}`,
+      },
+    ],
+    SPLIT_SCHEMA,
+  );
+  const tasks = normalizeTasks(res.tasks, 10).slice(0, 3);
+  if (tasks.length < 2) throw new Error('Couldn’t split that task. Try again in a moment.');
+  return { tasks };
+}

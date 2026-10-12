@@ -3,6 +3,8 @@ import { watchUser, signOutUser } from './firebase';
 import { usePrefs } from './prefs';
 import Library from './components/Library';
 import Study from './components/Study';
+import Assignments from './components/Assignments';
+import AssignmentWork from './components/AssignmentWork';
 import SignIn from './components/SignIn';
 import ComfortPanel from './components/ComfortPanel';
 import ReadingRuler from './components/ReadingRuler';
@@ -14,8 +16,11 @@ function useHashRoute() {
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
-  const match = hash.match(/^#\/doc\/([^/]+)/);
-  return match ? { docId: match[1] } : {};
+  const doc = hash.match(/^#\/doc\/([^/]+)/);
+  if (doc) return { docId: doc[1] };
+  const assignment = hash.match(/^#\/assignment\/([^/]+)/);
+  if (assignment) return { assignmentId: assignment[1] };
+  return { assignments: /^#\/assignments\/?$/.test(hash) };
 }
 
 export default function App() {
@@ -25,7 +30,7 @@ export default function App() {
   const uid = signedIn ? user.uid : null;
   const [prefs, setPrefs] = usePrefs(uid);
   const [comfortOpen, setComfortOpen] = useState(false);
-  const { docId } = useHashRoute();
+  const { docId, assignmentId, assignments } = useHashRoute();
 
   useEffect(() => watchUser(setUser), []);
 
@@ -50,8 +55,9 @@ export default function App() {
 
   return (
     <>
-      {docId
-        ? <Study uid={uid} docId={docId} prefs={prefs} setPrefs={setPrefs} comfortButton={comfortButton} accountButton={accountButton} />
+      {docId ? <Study uid={uid} docId={docId} prefs={prefs} setPrefs={setPrefs} comfortButton={comfortButton} accountButton={accountButton} />
+        : assignmentId ? <AssignmentWork key={assignmentId} uid={uid} assignmentId={assignmentId} comfortButton={comfortButton} accountButton={accountButton} />
+        : assignments ? <Assignments uid={uid} accountButton={accountButton} />
         : <Library uid={uid} accountButton={accountButton} />}
       {comfortOpen && <ComfortPanel prefs={prefs} setPrefs={setPrefs} onClose={() => setComfortOpen(false)} />}
       {prefs.ruler && <ReadingRuler />}
