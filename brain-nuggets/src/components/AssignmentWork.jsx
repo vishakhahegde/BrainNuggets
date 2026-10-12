@@ -3,6 +3,8 @@ import { watchAssignment, patchAssignment } from '../data';
 import { splitTask } from '../api';
 import { DAILY_MINUTES, dayKey, dueLabel, planDays } from '../schedule';
 import SprintTimer from './SprintTimer';
+import SidebarToggle from './SidebarToggle';
+import { useSidebarCollapsed } from '../sidebar';
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 
@@ -15,6 +17,7 @@ export default function AssignmentWork({ uid, assignmentId, comfortButton, accou
   const [splitting, setSplitting] = useState(false);
   const [error, setError] = useState(null);
   const [sprintMinutes, setSprintMinutes] = useState(10);
+  const [collapsed, toggleSidebar] = useSidebarCollapsed();
 
   useEffect(() => watchAssignment(uid, assignmentId, setA), [uid, assignmentId]);
 
@@ -85,9 +88,12 @@ export default function AssignmentWork({ uid, assignmentId, comfortButton, accou
   };
 
   return (
-    <div className="study assignment-work">
+    <div className={`study assignment-work${collapsed ? ' collapsed' : ''}`}>
       <aside className="sidebar" aria-label="Assignment checklist">
-        <a className="back-link" href="#/assignments">← All assignments</a>
+        <div className="side-head">
+          <a className="back-link" href="#/assignments">← All assignments</a>
+          <SidebarToggle collapsed={collapsed} onToggle={toggleSidebar} />
+        </div>
         <h2 className="side-title">{a.title}</h2>
         <div className="side-progress">
           <span className="muted">{doneCount} of {tasks.length} tasks done</span>
@@ -188,9 +194,6 @@ export default function AssignmentWork({ uid, assignmentId, comfortButton, accou
           </div>
 
           <aside className="study-rail" aria-label="Your plan">
-            <div className="rail-card">
-              <SprintTimer minutes={sprintMinutes} setMinutes={setSprintMinutes} />
-            </div>
             <div className="rail-card plan-card">
               <span className="label">Your plan</span>
               <p>
@@ -217,6 +220,9 @@ export default function AssignmentWork({ uid, assignmentId, comfortButton, accou
                   ))}
                 </div>
               </div>
+            </div>
+            <div className="rail-card">
+              <SprintTimer minutes={sprintMinutes} setMinutes={setSprintMinutes} />
             </div>
           </aside>
         </div>

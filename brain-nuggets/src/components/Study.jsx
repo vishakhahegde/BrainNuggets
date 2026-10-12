@@ -8,6 +8,8 @@ import Quiz from './Quiz';
 import AskBox from './AskBox';
 import KeyTerms from './KeyTerms';
 import SprintTimer from './SprintTimer';
+import SidebarToggle from './SidebarToggle';
+import { useSidebarCollapsed } from '../sidebar';
 
 const TABS = [
   { id: 'simple', label: 'Simple' },
@@ -38,6 +40,7 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
   const [finished, setFinished] = useState(false);
   const speech = useSpeech(prefs.speechRate);
   const mainRef = useRef();
+  const [collapsed, toggleSidebar] = useSidebarCollapsed();
 
   useEffect(() => watchDoc(uid, docId, setDoc), [uid, docId]);
   useEffect(() => watchChunks(uid, docId, setChunks), [uid, docId]);
@@ -78,9 +81,12 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
   const toRead = chunk && speakableText(tab, chunk);
 
   return (
-    <div className="study">
+    <div className={`study${collapsed ? ' collapsed' : ''}`}>
       <aside className="sidebar" aria-label="Lecture outline">
-        <a className="back-link" href="#/">← All lectures</a>
+        <div className="side-head">
+          <a className="back-link" href="#/">← All lectures</a>
+          <SidebarToggle collapsed={collapsed} onToggle={toggleSidebar} />
+        </div>
         <h2 className="side-title">{doc.title}</h2>
         <div className="side-progress">
           <span className="muted">{done.size} of {doc.chunkCount} done</span>
@@ -106,7 +112,6 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
             );
           })}
         </ol>
-        <SprintTimer minutes={prefs.sprintMinutes} setMinutes={(m) => setPrefs({ sprintMinutes: m })} />
       </aside>
 
       <main className="study-main" ref={mainRef}>
@@ -179,14 +184,19 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
         )}
         </div>
 
-        {chunk && !finished && (
-          <aside className="study-rail" aria-label="Help for this chunk">
-            <KeyTerms terms={chunk.keyTerms} />
-            <div className="rail-card">
-              <AskBox key={index} chunk={chunk} context={doc} />
-            </div>
-          </aside>
-        )}
+        <aside className="study-rail" aria-label="Help for this chunk">
+          {chunk && !finished && (
+            <>
+              <KeyTerms terms={chunk.keyTerms} />
+              <div className="rail-card">
+                <AskBox key={index} chunk={chunk} context={doc} />
+              </div>
+            </>
+          )}
+          <div className="rail-card">
+            <SprintTimer minutes={prefs.sprintMinutes} setMinutes={(m) => setPrefs({ sprintMinutes: m })} />
+          </div>
+        </aside>
         </div>
       </main>
     </div>
