@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { watchDocs, createDoc, patchDoc, saveChunk, removeDoc, USING_LOCAL_DB } from '../data';
+import { watchDocs, createDoc, patchDoc, saveChunk, removeDoc } from '../data';
 import { processPdf } from '../api';
 import { loadPdf, cropFigure } from '../figures';
 import shelfArt from '../assets/library-shelf.webp';
+import TopBar from './TopBar';
 
 const STALE_MS = 10 * 60 * 1000;
 
@@ -104,12 +105,7 @@ export default function Library({ uid, accountButton }) {
 
   return (
     <div className="library">
-      <header className="topbar">
-        <span className="brand">Brain Nuggets{USING_LOCAL_DB && <span className="mode-tag">Local test mode</span>}</span>
-        <div className="bar-actions">
-          {accountButton}
-        </div>
-      </header>
+      <TopBar active="lectures" accountButton={accountButton} />
 
       <main className="library-main">
         <h1>Your lectures</h1>
