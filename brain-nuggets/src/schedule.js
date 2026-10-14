@@ -1,9 +1,9 @@
-// Spreads an assignment's unfinished tasks over the days left before it's due.
+// Splits an assignment's unfinished tasks evenly over the days left before it's due.
 // Recomputed on every render, so tasks missed yesterday simply roll into today.
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export const DAILY_MINUTES = [10, 20, 30, 45, 60];
+export const BEHIND_TEXT = 'A bit behind. Today has a little extra to catch up.';
 
 // Local calendar date as YYYY-MM-DD.
 export function dayKey(date = new Date()) {
@@ -25,39 +25,45 @@ export function dueLabel(dueDate, today = dayKey()) {
   return `Due ${date} · ${n} days left`;
 }
 
+// The day an assignment was added, from its createdAt (a Firestore Timestamp or the local stand-in).
+export const startDayOf = (a) => {
+  const ms = a?.createdAt?.toMillis?.();
+  return ms ? dayKey(ms) : dayKey();
+};
+
 // Work days run from today up to the day before the due date (or just today if it's due today or has passed).
-export function planDays(tasks, dueDate, minutesPerDay, today = dayKey()) {
+// Today's share is the remaining work, plus anything already finished today, split evenly over those days.
+// "Behind" compares what's done with an even pace from the day the assignment was added.
+export function planDays(tasks, dueDate, startDay = dayKey(), today = dayKey()) {
+  const sum = (list) => list.reduce((s, t) => s + t.minutes, 0);
   const pending = tasks.filter((t) => !t.done);
-  const doneToday = tasks.filter((t) => t.done && t.doneOn === today).reduce((s, t) => s + t.minutes, 0);
+  const doneToday = sum(tasks.filter((t) => t.done && t.doneOn === today));
+  const doneTotal = sum(tasks.filter((t) => t.done));
+  const remaining = sum(pending);
   const days = Math.max(1, daysBetween(today, dueDate));
-  const remaining = pending.reduce((s, t) => s + t.minutes, 0);
-  const capacity = Math.max(0, minutesPerDay - doneToday) + (days - 1) * minutesPerDay;
+  const share = (remaining + doneToday) / days;
 
-  const behind = remaining > capacity;
-  // Rounded up to 5 minutes, so the hint reads naturally.
-  const extraPerDay = behind ? Math.ceil((remaining - capacity) / days / 5) * 5 : 0;
-  // When behind, each day's share includes the extra minutes, so the work spreads out instead of piling up on the last day.
-  const budget = minutesPerDay + extraPerDay;
-
-  const dayOf = {};
-  let day = 0;
+  const todayTasks = [];
   let used = doneToday;
   for (const t of pending) {
-    // Move to the next day when this task won't fit, unless it's the last day (overflow lands there).
-    while (day < days - 1 && used > 0 && used + t.minutes > budget) { day += 1; used = 0; }
-    dayOf[t.id] = day;
+    if (days > 1 && used >= share) break;
+    todayTasks.push(t);
     used += t.minutes;
   }
 
-  const todayTasks = pending.filter((t) => dayOf[t.id] === 0);
+  // Even pace: by the start of today, this much should be done. Half a task of slack before calling it behind.
+  const totalDays = Math.max(1, daysBetween(startDay, dueDate));
+  const elapsed = Math.min(totalDays, Math.max(0, daysBetween(startDay, today)));
+  const expected = (sum(tasks) * elapsed) / totalDays;
+  const avgTask = tasks.length ? sum(tasks) / tasks.length : 10;
+  const behind = pending.length > 0 && (daysBetween(today, dueDate) < 0 || doneTotal < expected - avgTask / 2);
+
   return {
     today: todayTasks,
-    todayMinutes: todayTasks.reduce((s, t) => s + t.minutes, 0),
+    todayMinutes: sum(todayTasks),
     doneToday,
-    dayOf,
     days,
     remaining,
     behind,
-    extraPerDay,
   };
 }

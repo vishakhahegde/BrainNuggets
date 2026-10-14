@@ -359,21 +359,20 @@ function normalizeBreakdown(b) {
   return { title: String(b.title ?? '').trim(), summary: String(b.summary ?? '').trim(), steps };
 }
 
-// Slices an assignment into ~10-minute tasks. The brief can be typed, a file (PDF or image), or both.
-export async function breakdownAssignment({ title, brief, file, days, minutesPerDay }) {
-  const parts = [];
-  if (file) parts.push({ inlineData: { mimeType: file.mimeType, data: file.base64 } });
-  parts.push({
+// Slices a typed assignment brief into ~10-minute tasks.
+export async function breakdownAssignment({ title, brief, days }) {
+  const parts = [{
     text: `A student has this assignment and doesn't know where to start. Break it into tiny tasks they can do one at a time.
-${file ? 'The attached file is the assignment sheet. Read all of it, including any marking criteria.\n' : ''}
 Assignment title: ${title || '(not given)'}
-${brief ? `What the teacher asked:\n${brief}\n` : ''}
-${days ? `They have ${days} day(s) and about ${minutesPerDay} minutes a day. Size the plan to fit that if the work allows, but never leave out a required part.\n` : ''}
+What the teacher asked:
+${brief}
+
+${days ? `They have ${days} day(s) until it's due. Size the plan sensibly for that, but never leave out a required part.\n` : ''}
 Group the tasks into 3 to 6 steps in the order the work happens (for example Understand, Research, Plan, Write, Check).
 The very first task must be a tiny 2 to 5 minute starter, such as opening a document and typing the question at the top.
 Cover everything the assignment needs, including re-reading the brief at the start and a final check against it at the end.
 ${TASK_RULES}`,
-  });
+  }];
   return normalizeBreakdown(await generate(parts, BREAKDOWN_SCHEMA));
 }
 

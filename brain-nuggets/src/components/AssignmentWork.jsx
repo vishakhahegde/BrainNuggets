@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { watchAssignment, patchAssignment } from '../data';
 import { splitTask } from '../api';
-import { DAILY_MINUTES, dayKey, dueLabel, planDays } from '../schedule';
+import { BEHIND_TEXT, dayKey, dueLabel, planDays, startDayOf } from '../schedule';
 import SprintTimer from './SprintTimer';
 import SidebarToggle from './SidebarToggle';
 import { useSidebarCollapsed } from '../sidebar';
@@ -36,7 +36,7 @@ export default function AssignmentWork({ uid, assignmentId, comfortButton, accou
   const today = dayKey();
   const tasks = a.tasks ?? [];
   const steps = a.steps ?? [];
-  const plan = planDays(tasks, a.dueDate, a.minutesPerDay, today);
+  const plan = planDays(tasks, a.dueDate, startDayOf(a), today);
   const todayIds = new Set(plan.today.map((t) => t.id));
   const pending = tasks.filter((t) => !t.done);
   const doneCount = tasks.length - pending.length;
@@ -203,7 +203,7 @@ export default function AssignmentWork({ uid, assignmentId, comfortButton, accou
               </p>
               {!allDone && (
                 <p className={plan.behind ? 'line-behind' : 'line-ok'}>
-                  {plan.behind ? `A bit behind. Try ${plan.extraPerDay} extra minutes a day.` : 'On track'}
+                  {plan.behind ? BEHIND_TEXT : 'On track'}
                 </p>
               )}
               <label className="form-field">
@@ -211,15 +211,6 @@ export default function AssignmentWork({ uid, assignmentId, comfortButton, accou
                 <input type="date" value={a.dueDate} min={today}
                   onChange={(e) => e.target.value && patchAssignment(uid, assignmentId, { dueDate: e.target.value })} />
               </label>
-              <div className="form-field">
-                <span>Minutes a day</span>
-                <div className="segmented five" role="group" aria-label="Minutes a day">
-                  {DAILY_MINUTES.map((m) => (
-                    <button key={m} className={m === a.minutesPerDay ? 'active' : ''} aria-pressed={m === a.minutesPerDay}
-                      onClick={() => patchAssignment(uid, assignmentId, { minutesPerDay: m })}>{m}</button>
-                  ))}
-                </div>
-              </div>
             </div>
             <div className="rail-card">
               <SprintTimer minutes={sprintMinutes} setMinutes={setSprintMinutes} />

@@ -12,16 +12,7 @@ async function post(path, body) {
 export const askTutor = (question, chunk, context) => post('/api/ask', { question, chunk, context });
 export const splitTask = (task, assignment) => post('/api/split-task', { task, assignment });
 
-// fields: title, brief, dueDate, today, minutesPerDay; file is optional (PDF or image).
-export async function breakdownAssignment(fields, file) {
-  const form = new FormData();
-  Object.entries(fields).forEach(([k, v]) => form.append(k, String(v ?? '')));
-  if (file) form.append('file', file);
-  const res = await fetch('/api/breakdown', { method: 'POST', body: form });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Couldn’t break that assignment down. Try again.');
-  return data;
-}
+export const breakdownAssignment = (fields) => post('/api/breakdown', fields);
 
 // Uploads a PDF and calls onEvent for each NDJSON event the server streams back.
 export async function processPdf(file, onEvent) {
