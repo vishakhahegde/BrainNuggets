@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { signInWithGoogle } from '../firebase';
 import studyNook from '../assets/study-nook.webp';
+import { LANDING_VERSION } from '../landing';
 import stepUpload from '../assets/step-upload.svg';
 import stepLearn from '../assets/step-learn.svg';
 import stepQuiz from '../assets/step-quiz.svg';
@@ -35,17 +36,18 @@ function friendlyError(err) {
 }
 
 // The landing page. `cta` is what sits under the tagline: sign-in when signed out, shortcuts when signed in.
-export function Landing({ cta, className = '' }) {
+// v1 shows the round study-nook picture beside the hero; v2 puts the hero over a full painted background.
+export function Landing({ cta, className = '', version = LANDING_VERSION }) {
   const [how, setHow] = useState('lectures');
   return (
-    <main className={`landing ${className}`.trim()}>
+    <main className={`landing landing-${version} ${className}`.trim()}>
       <div className="landing-top">
       <section className="landing-hero">
         <h1 className="landing-title">Brain<br />Nuggets</h1>
         <p className="landing-tagline">Big lectures, broken into bite-sized nuggets.</p>
         <div className="landing-cta">{cta}</div>
       </section>
-      <img className="landing-art" src={studyNook} alt="" />
+      {version === 'v1' && <img className="landing-art" src={studyNook} alt="" />}
       </div>
 
       <section className="how" aria-labelledby="how-title">
