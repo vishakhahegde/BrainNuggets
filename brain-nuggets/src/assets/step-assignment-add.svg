@@ -1,0 +1,15 @@
+<svg viewBox="0 0 240 180" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="120" cy="166" rx="92" ry="9" fill="#efe3c8"/>
+  <path d="M22 166h36l-4-30H26z" fill="#e8b33c"/>
+  <g fill="#8fae7e"><path d="M40 138c-16-22-10-46 2-54 6 20 6 38-2 54z"/><path d="M42 138c4-26 20-40 36-40-6 20-18 34-36 40z"/></g>
+  <rect x="80" y="30" width="104" height="132" rx="8" fill="#fffdf7" stroke="#3b2a40" stroke-width="3"/>
+  <rect x="108" y="20" width="48" height="18" rx="5" fill="#b58ad0" stroke="#3b2a40" stroke-width="2.5"/>
+  <g stroke="#d9cdb4" stroke-width="4" stroke-linecap="round"><path d="M96 60h72"/><path d="M96 76h60"/><path d="M96 92h66"/><path d="M96 108h48"/></g>
+  <path d="M96 60h40" stroke="#722f99" stroke-width="4" stroke-linecap="round"/>
+  <path d="M166 104l26-26 10 10-26 26-14 4z" fill="#e8b33c" stroke="#3b2a40" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M192 78l6-6 10 10-6 6" fill="#ee6f57" stroke="#3b2a40" stroke-width="2.5" stroke-linejoin="round"/>
+  <rect x="58" y="122" width="74" height="28" rx="7" fill="#ee6f57"/>
+  <rect x="66" y="130" width="12" height="12" rx="2" fill="none" stroke="#fff" stroke-width="2.5"/><path d="M66 134h12" stroke="#fff" stroke-width="2.5"/>
+  <text x="84" y="141" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="12" fill="#fff">Due Fri</text>
+  <g fill="#e8b33c"><path d="M206 34l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/></g>
+</svg>

@@ -4,12 +4,28 @@ import studyNook from '../assets/study-nook.webp';
 import stepUpload from '../assets/step-upload.svg';
 import stepLearn from '../assets/step-learn.svg';
 import stepQuiz from '../assets/step-quiz.svg';
+import stepAssignmentAdd from '../assets/step-assignment-add.svg';
+import stepAssignmentTasks from '../assets/step-assignment-tasks.svg';
+import stepAssignmentPlan from '../assets/step-assignment-plan.svg';
 
-const STEPS = [
-  { img: stepUpload, text: 'Upload a lecture PDF' },
-  { img: stepLearn, text: 'Learn one chunk at a time' },
-  { img: stepQuiz, text: 'Check yourself with a quiz' },
-];
+const HOW = {
+  lectures: {
+    label: 'Lectures',
+    steps: [
+      { img: stepUpload, text: 'Upload a lecture PDF' },
+      { img: stepLearn, text: 'Learn one chunk at a time' },
+      { img: stepQuiz, text: 'Check yourself with a quiz' },
+    ],
+  },
+  assignments: {
+    label: 'Assignments',
+    steps: [
+      { img: stepAssignmentAdd, text: 'Add your assignment' },
+      { img: stepAssignmentTasks, text: 'Break it into small, doable tasks' },
+      { img: stepAssignmentPlan, text: 'Tick off today’s plan' },
+    ],
+  },
+};
 
 function friendlyError(err) {
   if (err.code === 'auth/popup-blocked') return 'Your browser blocked the sign-in window. Allow popups for this site and try again.';
@@ -20,6 +36,7 @@ function friendlyError(err) {
 
 // The landing page. `cta` is what sits under the tagline: sign-in when signed out, shortcuts when signed in.
 export function Landing({ cta, className = '' }) {
+  const [how, setHow] = useState('lectures');
   return (
     <main className={`landing ${className}`.trim()}>
       <div className="landing-top">
@@ -34,8 +51,15 @@ export function Landing({ cta, className = '' }) {
       <section className="how" aria-labelledby="how-title">
         <h2 id="how-title" className="how-title">How it works</h2>
         <p className="how-sub">Less overwhelm. One little nugget at a time.</p>
-        <ol className="how-steps">
-          {STEPS.map((s, i) => (
+        <div className="how-switch" role="tablist" aria-label="Feature">
+          {Object.entries(HOW).map(([id, h]) => (
+            <button key={id} role="tab" id={`how-tab-${id}`} aria-selected={how === id} aria-controls="how-steps" onClick={() => setHow(id)}>
+              {h.label}
+            </button>
+          ))}
+        </div>
+        <ol className="how-steps" id="how-steps" role="tabpanel" aria-labelledby={`how-tab-${how}`}>
+          {HOW[how].steps.map((s, i) => (
             <li key={s.text} className="how-step">
               <span className="how-num" aria-hidden="true">{i + 1}</span>
               <img src={s.img} alt="" />
