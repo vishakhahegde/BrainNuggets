@@ -737,7 +737,6 @@ a { color: var(--accent); }
 .done-when p { margin: 0; }
 .cheer { margin-top: 20px; color: var(--right); font-weight: 500; font-size: 17px; }
 :root[data-bg='dark'] .cheer { color: #8fcf98; }
-.task-secondary { display: flex; gap: 6px; flex-wrap: wrap; }
 .rail-card .sprint { border-top: none; padding-top: 0; }
 .plan-card { display: grid; gap: 12px; }
 .plan-card p { margin: 0; font-size: 15px; }
@@ -748,7 +747,6 @@ a { color: var(--accent); }
   .assignment-work .sidebar { order: 2; border-bottom: none; border-top: 1px solid var(--border); }
   .assignment-work .sidebar .back-link { display: none; }
   .assignment-work .bar-back { display: inline-flex; }
-  .task-secondary { flex: 1 1 100%; }
 }
 
 /* Landing (signed out) */

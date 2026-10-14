@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import { watchAssignment, patchAssignment } from '../data';
-import { splitTask } from '../api';
 import { BEHIND_TEXT, dayKey, dueLabel, planDays, startDayOf } from '../schedule';
 import SprintTimer from './SprintTimer';
 import SidebarToggle from './SidebarToggle';
 import { useSidebarCollapsed } from '../sidebar';
-
-const newId = () => Math.random().toString(36).slice(2, 10);
 
 // One task at a time: the current task in the middle, the whole checklist on the side.
 export default function AssignmentWork({ uid, assignmentId, comfortButton, accountButton }) {
@@ -14,8 +11,6 @@ export default function AssignmentWork({ uid, assignmentId, comfortButton, accou
   const [currentId, setCurrentId] = useState(null);
   const [moreToday, setMoreToday] = useState(false);
   const [cheer, setCheer] = useState(null);
-  const [splitting, setSplitting] = useState(false);
-  const [error, setError] = useState(null);
   const [sprintMinutes, setSprintMinutes] = useState(10);
   const [collapsed, toggleSidebar] = useSidebarCollapsed();
 
@@ -52,39 +47,13 @@ export default function AssignmentWork({ uid, assignmentId, comfortButton, accou
   const setDone = (task, done) =>
     save(tasks.map((t) => (t.id === task.id ? { ...t, done, doneOn: done ? today : null } : t)));
 
-  const select = (id) => { setCurrentId(id); setCheer(null); setError(null); };
+  const select = (id) => { setCurrentId(id); setCheer(null); };
 
   const finish = async (task) => {
     await setDone(task, true);
     select(null);
     setCheer(`Nice, ${doneCount + 1} down.`);
     setMoreToday(false); // ask again before starting another day's task
-  };
-
-  // Skipped tasks go to the end of the list and come back once everything else is done.
-  const skip = (task) => {
-    if (pending.length === 1) return setCheer('This is the last task left. You’ve got this.');
-    save([...tasks.filter((t) => t.id !== task.id), task]);
-    select(null);
-  };
-
-  const split = async (task) => {
-    setSplitting(true);
-    setCheer(null);
-    setError(null);
-    try {
-      const { tasks: smaller } = await splitTask(
-        { title: task.title, doneWhen: task.doneWhen, minutes: task.minutes },
-        { title: a.title, summary: a.summary, step: steps[task.step] },
-      );
-      const replacements = smaller.map((t) => ({ ...t, id: newId(), step: task.step, done: false }));
-      await save(tasks.flatMap((t) => (t.id === task.id ? replacements : [t])));
-      select(replacements[0].id);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSplitting(false);
-    }
   };
 
   return (
@@ -177,17 +146,10 @@ export default function AssignmentWork({ uid, assignmentId, comfortButton, accou
                     </div>
                   )}
                   {cheer && <p className="cheer" role="status">{cheer}</p>}
-                  {error && <p className="error-text" role="alert">{error}</p>}
                 </article>
 
                 <div className="chunk-actions">
-                  <div className="task-secondary">
-                    <button className="btn secondary" onClick={() => split(current)} disabled={splitting}>
-                      {splitting ? 'Splitting…' : 'Too big? Split it'}
-                    </button>
-                    <button className="btn ghost" onClick={() => skip(current)} disabled={splitting}>Skip for now</button>
-                  </div>
-                  <button className="btn primary big" onClick={() => finish(current)} disabled={splitting}>Done ✓</button>
+                  <button className="btn primary big" onClick={() => finish(current)}>Done ✓</button>
                 </div>
               </>
             )}

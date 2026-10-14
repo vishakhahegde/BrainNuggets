@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import multer from 'multer';
-import { buildContext, buildChunk, askTutor, breakdownAssignment, splitTask } from './gemini.js';
+import { buildContext, buildChunk, askTutor, breakdownAssignment } from './gemini.js';
 
 // Cloud Run sets PORT; locally the Vite dev server proxies /api to 3104.
 const PORT = process.env.PORT || process.env.API_PORT || 3104;
@@ -77,17 +77,6 @@ app.post('/api/breakdown', async (req, res) => {
     res.json(await breakdownAssignment({ title: String(title).trim(), brief: String(brief).trim().slice(0, 20000), days }));
   } catch (err) {
     console.error('[breakdown]', err);
-    res.status(502).json({ error: friendlyError(err) });
-  }
-});
-
-app.post('/api/split-task', async (req, res) => {
-  const { task, assignment } = req.body ?? {};
-  if (!task?.title) return res.status(400).json({ error: 'Bad request' });
-  try {
-    res.json(await splitTask(task, assignment));
-  } catch (err) {
-    console.error('[split-task]', err);
     res.status(502).json({ error: friendlyError(err) });
   }
 });

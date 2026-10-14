@@ -10,7 +10,6 @@ async function post(path, body) {
 }
 
 export const askTutor = (question, chunk, context) => post('/api/ask', { question, chunk, context });
-export const splitTask = (task, assignment) => post('/api/split-task', { task, assignment });
 
 export const breakdownAssignment = (fields) => post('/api/breakdown', fields);
 

@@ -325,12 +325,6 @@ const BREAKDOWN_SCHEMA = {
   required: ['title', 'summary', 'steps'],
 };
 
-const SPLIT_SCHEMA = {
-  type: 'object',
-  properties: { tasks: { type: 'array', items: TASK_ITEM } },
-  required: ['tasks'],
-};
-
 const TASK_RULES = `Rules for every task:
 - One concrete physical action the student can start right now, written as a verb ("Write", "Find", "Read", "List").
 - Small: 5 to 15 minutes for a student who works slowly, aiming for 10.
@@ -374,27 +368,4 @@ Cover everything the assignment needs, including re-reading the brief at the sta
 ${TASK_RULES}`,
   }];
   return normalizeBreakdown(await generate(parts, BREAKDOWN_SCHEMA));
-}
-
-// Replaces one task that still feels too big with 2-3 smaller ones.
-export async function splitTask(task, assignment) {
-  const res = await generate(
-    [
-      {
-        text: `A student is stuck on one task from their assignment because it feels too big. Split it into 2 or 3 smaller tasks that together do the same job.
-
-Assignment: ${assignment?.title ?? ''}${assignment?.summary ? ` (${assignment.summary})` : ''}
-Step: ${assignment?.step ?? ''}
-Task: ${task.title}
-Done when: ${task.doneWhen}
-
-Each new task should take 3 to 8 minutes.
-${TASK_RULES}`,
-      },
-    ],
-    SPLIT_SCHEMA,
-  );
-  const tasks = normalizeTasks(res.tasks, 10).slice(0, 3);
-  if (tasks.length < 2) throw new Error('Couldn’t split that task. Try again in a moment.');
-  return { tasks };
 }
