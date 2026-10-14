@@ -66,21 +66,15 @@ app.post('/api/ask', async (req, res) => {
   }
 });
 
-const BRIEF_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Turns an assignment (typed brief and/or the assignment sheet) into small tasks.
-app.post('/api/breakdown', upload.single('file'), async (req, res) => {
+// Turns a typed assignment brief into small tasks.
+app.post('/api/breakdown', async (req, res) => {
   const { title = '', brief = '', dueDate = '', today = '' } = req.body ?? {};
-  const minutesPerDay = Number(req.body?.minutesPerDay) || 30;
-  if (req.file && !BRIEF_TYPES.includes(req.file.mimetype)) {
-    return res.status(400).json({ error: 'Add the assignment sheet as a PDF or a photo (PNG, JPG or WebP).' });
-  }
-  if (!brief.trim() && !req.file) return res.status(400).json({ error: 'Tell us what the assignment is, or add the assignment sheet.' });
+  if (!String(brief).trim()) return res.status(400).json({ error: 'Tell us what the assignment is.' });
   const days = dueDate && today ? Math.max(1, Math.round((Date.parse(dueDate) - Date.parse(today)) / DAY_MS)) : 0;
   try {
-    const file = req.file && { mimeType: req.file.mimetype, base64: req.file.buffer.toString('base64') };
-    res.json(await breakdownAssignment({ title: title.trim(), brief: brief.trim().slice(0, 20000), file, days, minutesPerDay }));
+    res.json(await breakdownAssignment({ title: String(title).trim(), brief: String(brief).trim().slice(0, 20000), days }));
   } catch (err) {
     console.error('[breakdown]', err);
     res.status(502).json({ error: friendlyError(err) });
@@ -106,7 +100,7 @@ if (existsSync(DIST)) {
 }
 
 app.use((err, _req, res, _next) => {
-  if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: `Files must be under ${MAX_MB}MB.` });
+  if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: `PDFs must be under ${MAX_MB}MB.` });
   console.error(err);
   res.status(500).json({ error: 'Server error' });
 });
