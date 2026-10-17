@@ -4,6 +4,8 @@
 
 Brain Nuggets is a study app for students with ADHD, dyslexia and other learning differences. Long lecture PDFs and big assignments are where these students most often get stuck. A wall of dense slides is hard to read, and a task like "write a history paper" gives no obvious place to start. Brain Nuggets turns both into small, calm, one-at-a-time steps, using Google Gemini to do the heavy lifting.
 
+<img width="1900" height="947" alt="image" src="https://github.com/user-attachments/assets/44c3011c-12cb-4aca-b250-5a8040778935" />
+
 ---
 
 ## Features
