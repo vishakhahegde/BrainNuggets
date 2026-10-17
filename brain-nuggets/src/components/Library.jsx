@@ -7,6 +7,8 @@ import TopBar from './TopBar';
 
 const STALE_MS = 10 * 60 * 1000;
 
+const nuggets = (n) => (n === 1 ? 'nugget' : 'nuggets');
+
 // Crops each figure the model picked; a figure that can't be cropped is dropped, never the chunk.
 async function cropChunkFigures(pdf, index, figures = []) {
   const kept = [];
@@ -62,12 +64,12 @@ function statusLine(d) {
   }
   if (d.status === 'processing') {
     return d.chunkCount
-      ? { text: `Preparing chunks · ${d.readyCount} of ${d.chunkCount} ready` }
+      ? { text: `Preparing nuggets · ${d.readyCount} of ${d.chunkCount} ready` }
       : { text: 'Reading your PDF…' };
   }
   const done = d.done?.length ?? 0;
-  if (done === d.chunkCount) return { text: `All ${d.chunkCount} chunks done` };
-  return { text: `${done} of ${d.chunkCount} chunks done · about ${d.totalMinutes} min total` };
+  if (done === d.chunkCount) return { text: `All ${d.chunkCount} ${nuggets(d.chunkCount)} done` };
+  return { text: `${done} of ${d.chunkCount} ${nuggets(d.chunkCount)} done · about ${d.totalMinutes} min total` };
 }
 
 export default function Library({ uid, accountButton }) {
@@ -123,7 +125,7 @@ export default function Library({ uid, accountButton }) {
             onChange={(e) => { handleFiles(e.target.files); e.target.value = ''; }}
           />
           <span className="dropzone-title">Upload a lecture PDF</span>
-          <span className="muted">Drop it here or click to choose. We’ll turn it into short, simple chunks.</span>
+          <span className="muted">Drop it here or click to choose. We’ll turn it into short, simple nuggets.</span>
         </label>
         {uploadError && <p className="error-text" role="alert">{uploadError}</p>}
 
