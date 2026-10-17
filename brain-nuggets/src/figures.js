@@ -8,6 +8,8 @@ const PAD = 0.012; // final white border around the cropped figure
 const STEP = 0.01; // grow a cut side by 1% of the page at a time
 const GAP = 0.012; // a side is clean once this much blank space sits at its edge
 const MAX_GROW = 0.35; // never grow a side by more than 35% of the page
+const GUTTER = 0.01; // a blank strip this wide splits the crop into separate blocks
+const TEXT_LINE = 0.03; // a line of text is never taller than 3% of the page
 
 let pdfjsPromise;
 let pdfjsLib;
@@ -171,7 +173,62 @@ function figureRect(ctx, viewport, text, box, W, H) {
   const tight = inkBounds(pixels, W, mask, start) ?? start;
   const grown = expandToWhitespace(pixels, W, H, tight, mask);
   const r = inkBounds(pixels, W, mask, grown) ?? grown; // drop any overshoot from growing in steps
-  return padAwayFromProse(r, mask, W, H, Math.round(PAD * W));
+  const trimmed = dropTextBlocks(pixels, W, H, r, mask);
+  return padAwayFromProse(trimmed, mask, W, H, Math.round(PAD * W));
+}
+
+// Blocks of the crop split by blank gutters, along x (columns) or y (rows).
+function blocks(pixels, W, r, alongX, gutter) {
+  const [a0, a1, b0, b1] = alongX ? [r.x0, r.x1, r.y0, r.y1] : [r.y0, r.y1, r.x0, r.x1];
+  const spans = [];
+  let start = -1, last = -1;
+  for (let a = a0; a < a1; a++) {
+    let ink = false;
+    for (let b = b0; b < b1 && !ink; b++) ink = isInk(pixels, (alongX ? b * W + a : a * W + b) * 4);
+    if (!ink) continue;
+    if (start < 0 || a - last > gutter) { if (start >= 0) spans.push([start, last + 1]); start = a; }
+    last = a;
+  }
+  if (start >= 0) spans.push([start, last + 1]);
+  return spans.map(([s, e]) => (alongX ? { ...r, x0: s, x1: e } : { ...r, y0: s, y1: e }));
+}
+
+// Looks like running text: several short, evenly sized lines, most spanning the block's width.
+// A drawing has tall unbroken ink; labels beside a drawing are ragged, not full width.
+function looksLikeText(pixels, W, H, r) {
+  const lines = [];
+  let line = null;
+  for (let y = r.y0; y < r.y1; y++) {
+    let x0 = Infinity, x1 = -1;
+    for (let x = r.x0; x < r.x1; x++) if (isInk(pixels, (y * W + x) * 4)) { if (x0 === Infinity) x0 = x; x1 = x; }
+    if (x1 < 0) { line = null; continue; }
+    if (!line) lines.push(line = { y0: y, y1: y, x0, x1 });
+    else Object.assign(line, { y1: y, x0: Math.min(line.x0, x0), x1: Math.max(line.x1, x1) });
+  }
+  if (lines.length < 4 || lines.some((l) => l.y1 - l.y0 > TEXT_LINE * H)) return false;
+  const wide = lines.filter((l) => l.x1 - l.x0 >= 0.75 * (r.x1 - r.x0)).length;
+  return wide >= 0.6 * lines.length;
+}
+
+// When the page's text layer misses some prose (a column of text beside the figure,
+// a paragraph above it), drop blocks of the crop that read as text. Dropped blocks
+// are added to the prose mask so the white border never reaches back into them.
+function dropTextBlocks(pixels, W, H, rect, mask) {
+  let r = rect;
+  for (const alongX of [true, false]) {
+    const parts = blocks(pixels, W, r, alongX, Math.round(GUTTER * (alongX ? W : H)));
+    if (parts.length < 2) continue;
+    const text = parts.map((p) => looksLikeText(pixels, W, H, p));
+    if (text.every(Boolean) || !text.some(Boolean)) continue;
+    const kept = parts.filter((_, i) => !text[i]);
+    parts.forEach((p, i) => { if (text[i]) for (let y = p.y0; y < p.y1; y++) mask.fill(1, y * W + p.x0, y * W + p.x1); });
+    const box = {
+      x0: Math.min(...kept.map((p) => p.x0)), x1: Math.max(...kept.map((p) => p.x1)),
+      y0: Math.min(...kept.map((p) => p.y0)), y1: Math.max(...kept.map((p) => p.y1)),
+    };
+    r = inkBounds(pixels, W, mask, box) ?? box;
+  }
+  return r;
 }
 
 // A white border around the figure that stops short of any prose.
