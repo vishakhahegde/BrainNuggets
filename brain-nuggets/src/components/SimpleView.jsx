@@ -10,10 +10,13 @@ export default function SimpleView({ uid, docId, chunk }) {
       <ul className="bullets">
         {chunk.bullets.map((b, i) => <li key={i}><Highlight text={b} terms={terms} /></li>)}
       </ul>
-      <div className="analogy">
-        <span className="label">Think of it like this</span>
-        <p><Highlight text={chunk.analogy} terms={terms} /></p>
-      </div>
+      {chunk.failed && <p className="muted">{chunk.original}</p>}
+      {chunk.analogy && (
+        <div className="analogy">
+          <span className="label">Think of it like this</span>
+          <p><Highlight text={chunk.analogy} terms={terms} /></p>
+        </div>
+      )}
     </div>
   );
 }

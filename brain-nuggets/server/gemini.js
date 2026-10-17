@@ -143,6 +143,11 @@ async function callModel(model, parts, schema) {
     if (err.name === 'TimeoutError' || err.name === 'AbortError') err.status = 'TIMEOUT';
     throw err;
   });
+  // Gemini sends no text when it blocks a reply (e.g. RECITATION for copied textbook text).
+  if (!res.text) {
+    const reason = res.promptFeedback?.blockReason ?? res.candidates?.[0]?.finishReason ?? 'EMPTY';
+    throw new Error(`Gemini returned no content (${reason})`);
+  }
   const data = JSON.parse(res.text);
   const missing = schema.required?.filter((k) => data[k] === undefined) ?? [];
   if (missing.length) throw new Error(`Gemini response was missing ${missing.join(', ')}`);
@@ -238,14 +243,23 @@ function normalizeChunk(c, pages = []) {
   };
 }
 
-// Agents 2-4: simplify one chunk, map it, and write low-stakes quiz questions.
-export async function buildChunk(pdfBase64, context, index) {
+// Verbatim copying is the usual reason Gemini blocks a chunk (RECITATION),
+// so the retry asks for a close retelling instead.
+const PARAPHRASE = 'A close, complete retelling of the source passage this chunk covers, in full sentences. Do not copy it word for word. Use blank lines between paragraphs.';
+const CHUNK_MODES = [
+  { original: '- original: the matching source text copied verbatim from the PDF.', schema: CHUNK_SCHEMA },
+  {
+    original: `- original: ${PARAPHRASE}`,
+    schema: { ...CHUNK_SCHEMA, properties: { ...CHUNK_SCHEMA.properties, original: { ...str, description: PARAPHRASE } } },
+  },
+];
+
+function chunkParts(pdfBase64, context, index, original) {
   const item = context.plan[index];
-  return normalizeChunk(await generate(
-    [
-      pdfPart(pdfBase64),
-      {
-        text: `Lecture context:
+  return [
+    pdfPart(pdfBase64),
+    {
+      text: `Lecture context:
 ${JSON.stringify({ title: context.title, summary: context.summary, concepts: context.concepts })}
 
 Full teaching plan (you are writing chunk ${index + 1} of ${context.plan.length}):
@@ -256,15 +270,44 @@ Write chunk ${index + 1}: "${item.title}" (pages ${item.pages.join(', ')}). Big 
 - bullets: exactly 3 short points that support it.
 - analogy: one everyday comparison.
 - keyTerms: 2 to 5 subject-specific terms a struggling student might not know (never everyday words like "cells" or "energy"). Each must appear word-for-word in bigIdea or bullets. Give a one-line plain definition.
-- original: the matching source text copied verbatim from the PDF.
+${original}
 - mindMap: the big idea at the center, 2 to 4 branches, each with 1 to 3 very short children (under 6 words).
 - figures: 0 to 2 diagrams, charts, tables or photos from pages ${item.pages.join(', ')} that genuinely help a student grasp the big idea, most important first. Skip logos, decorations and slide backgrounds. Give a tight box around just the figure: the drawing with its labels, leader lines and legend, but none of the surrounding paragraphs, the caption line or page headers, a one-sentence caption, 2 to 3 short "look for" pointers, and a plain description someone could follow without seeing it. Use an empty list if no figure helps.
 - quiz: 2 multiple-choice questions with 3 options each. Test understanding, not memorised wording. Keep the tone low-stakes.
 Do not repeat material that belongs to other chunks.`,
-      },
-    ],
-    CHUNK_SCHEMA,
-  ), item.pages);
+    },
+  ];
+}
+
+// Stands in for a chunk Gemini wouldn't write, so the rest of the lecture still works.
+function placeholderChunk(item) {
+  const pages = item.pages.length > 1 ? `pages ${item.pages.join(', ')}` : `page ${item.pages[0]}`;
+  return {
+    title: item.title,
+    bigIdea: item.focus,
+    bullets: [],
+    analogy: '',
+    keyTerms: [],
+    original: `We couldn't prepare this part. You can read it on ${pages} of your PDF.`,
+    mindMap: { center: item.title, branches: [] },
+    figures: [],
+    quiz: [],
+    failed: true,
+  };
+}
+
+// Agents 2-4: simplify one chunk, map it, and write low-stakes quiz questions.
+// Never throws: a failed chunk is retried with a paraphrase, then replaced by a placeholder.
+export async function buildChunk(pdfBase64, context, index) {
+  const item = context.plan[index];
+  for (const { original, schema } of CHUNK_MODES) {
+    try {
+      return normalizeChunk(await generate(chunkParts(pdfBase64, context, index, original), schema), item.pages);
+    } catch (err) {
+      console.warn(`[chunk ${index + 1}] ${err.message}`);
+    }
+  }
+  return placeholderChunk(item);
 }
 
 // Plain-text version of a chunk's figures so text-only prompts can refer to them.

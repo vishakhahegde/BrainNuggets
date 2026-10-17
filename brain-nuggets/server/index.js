@@ -18,6 +18,9 @@ function friendlyError(err) {
   if (status === 402) return 'The Gemini API key has run out of credits. Top it up in AI Studio.';
   if (status === 429) return 'Gemini is rate-limiting requests. Wait a minute and try again.';
   if (status === 401 || status === 403) return 'The Gemini API key was rejected.';
+  if (err instanceof SyntaxError || err.message?.startsWith('Gemini returned no content')) {
+    return 'Gemini couldn’t read this PDF just now. Try uploading it again.';
+  }
   return err.message || 'Something went wrong talking to Gemini.';
 }
 
