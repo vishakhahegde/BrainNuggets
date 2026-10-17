@@ -29,9 +29,10 @@ export default function App() {
   const [user, setUser] = useState(undefined);
   const signedIn = user && !user.isAnonymous;
   const uid = signedIn ? user.uid : null;
-  const [prefs, setPrefs] = usePrefs(uid);
-  const [comfortOpen, setComfortOpen] = useState(false);
   const { docId, assignmentId, assignments, home } = useHashRoute();
+  const inside = Boolean(docId || assignmentId);
+  const [prefs, setPrefs] = usePrefs(uid, signedIn && inside);
+  const [comfortOpen, setComfortOpen] = useState(false);
 
   useEffect(() => watchUser(setUser), []);
 
@@ -62,7 +63,7 @@ export default function App() {
         : assignments ? <Assignments uid={uid} accountButton={accountButton} />
         : <Library uid={uid} accountButton={accountButton} />}
       {comfortOpen && <ComfortPanel prefs={prefs} setPrefs={setPrefs} onClose={() => setComfortOpen(false)} />}
-      {prefs.ruler && <ReadingRuler />}
+      {inside && prefs.ruler && <ReadingRuler />}
     </>
   );
 }

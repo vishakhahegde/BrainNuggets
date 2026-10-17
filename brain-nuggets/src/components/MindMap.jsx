@@ -1,5 +1,5 @@
 export default function MindMap({ map }) {
-  if (!map?.branches?.length) return <p className="muted">No mind map for this chunk.</p>;
+  if (!map?.branches?.length) return <p className="muted">No mind map for this nugget.</p>;
   return (
     <div className="mindmap">
       <div className="mm-center">{map.center}</div>

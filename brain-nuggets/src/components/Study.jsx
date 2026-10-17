@@ -146,19 +146,19 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
         {finished ? (
           <section className="chunk finished">
             <h1>You finished this lecture.</h1>
-            <p>All {doc.chunkCount} chunks done.</p>
+            <p>{doc.chunkCount === 1 ? 'The nugget is done.' : `All ${doc.chunkCount} nuggets done.`}</p>
             <div className="chunk-actions">
               <a className="btn ghost" href="#/">All lectures</a>
               <button className="btn primary" onClick={() => goTo(0)}>Review from the start</button>
             </div>
           </section>
         ) : !chunk ? (
-          <section className="chunk"><p className="muted">Still preparing this chunk…</p></section>
+          <section className="chunk"><p className="muted">Still preparing this nugget…</p></section>
         ) : (
           <>
             <article className="chunk" role="tabpanel">
               <p className="chunk-meta">
-                Chunk {index + 1} of {doc.chunkCount} · about {chunk.minutes ?? 4} min
+                Nugget {index + 1} of {doc.chunkCount} · about {chunk.minutes ?? 4} min
                 {chunk.pages?.length ? ` · ${pageLabel(chunk.pages)}` : ''}
               </p>
               <h1 className="chunk-title">{chunk.title}</h1>
@@ -177,14 +177,14 @@ export default function Study({ uid, docId, prefs, setPrefs, comfortButton, acco
 
             <div className="chunk-actions">
               <button className="btn primary big" onClick={gotIt}>
-                {index === doc.chunkCount - 1 ? 'Got it, finish' : 'Got it, next chunk'}
+                {index === doc.chunkCount - 1 ? 'Got it, finish' : 'Got it, next nugget'}
               </button>
             </div>
           </>
         )}
         </div>
 
-        <aside className="study-rail" aria-label="Help for this chunk">
+        <aside className="study-rail" aria-label="Help for this nugget">
           {chunk && !finished && (
             <>
               <KeyTerms terms={chunk.keyTerms} />

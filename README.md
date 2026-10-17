@@ -9,16 +9,16 @@ Brain Nuggets is a study app for students with ADHD, dyslexia and other learning
 ## Features
 
 ### Your Lectures
-- **Upload a lecture PDF**, and it is split into short chunks of about 4 minutes each, ordered the way a learner needs them. Chunks appear as soon as each one is ready.
-- **Four ways to study each chunk:**
+- **Upload a lecture PDF**, and it is split into short nuggets of about 4 minutes each, ordered the way a learner needs them. Nuggets appear as soon as each one is ready.
+- **Four ways to study each nugget:**
   - **Simple**: the big idea, a few short bullets and an everyday analogy.
   - **Original**: the source text for that part of the lecture.
   - **Mind map**: how the ideas connect.
   - **Quiz**: quick questions, with a gentle re-explanation when an answer is wrong.
 - **Figures from the PDF**: diagrams are cropped straight from the lecture, together with their labels, and shown with "look for" pointers.
 - **Key terms** are highlighted in the text and explained in a side panel.
-- **Stuck?** Ask a question about the current chunk, and the answer comes only from the lecture material.
-- **Read aloud** for any chunk.
+- **Stuck?** Ask a question about the current nugget, and the answer comes only from the lecture material.
+- **Read aloud** for any nugget.
 
 ### Your Assignments
 - **Type what the teacher asked and pick a due date.** The assignment is broken into small tasks of about 10 minutes, grouped into steps (for example Understand, Research, Plan, Write, Check).
@@ -40,7 +40,7 @@ Brain Nuggets is a study app for students with ADHD, dyslexia and other learning
 
 ### Designed for focus
 - Lexend, a typeface designed to make reading easier, is used throughout, along with short sentences and plain words.
-- Only one thing is on screen at a time: one chunk, one task.
+- Only one thing is on screen at a time: one nugget, one task.
 - Wording is kind and blame-free ("A bit behind", never "Overdue!").
 - Timers are always optional, and breaks are encouraged.
 
@@ -62,8 +62,8 @@ Browser (React + Vite)                     Server (Node + Express)            Go
 
 - **Lecture pipeline:**
   - Gemini reads the whole PDF once to build a plan: the title, the key concepts and the order to teach them.
-  - It then writes each chunk (three at a time), including figure locations.
-  - The server streams chunks back as newline-delimited JSON, so the first ones are readable while the rest are still being written.
+  - It then writes each nugget (three at a time), including figure locations.
+  - The server streams nuggets back as newline-delimited JSON, so the first ones are readable while the rest are still being written.
 - **Figures:** the browser renders the page with pdf.js and uses the PDF's text layer to tell paragraphs from labels. It crops just the drawing and its labels, then saves a compressed image with the lesson.
 - **Assignments:**
   - Gemini turns the typed brief into steps and tasks, each with a "Done when" line.

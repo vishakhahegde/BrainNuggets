@@ -14,7 +14,7 @@ const HOW = {
     label: 'Lectures',
     steps: [
       { img: stepUpload, text: 'Upload a lecture PDF' },
-      { img: stepLearn, text: 'Learn one chunk at a time' },
+      { img: stepLearn, text: 'Learn one nugget at a time' },
       { img: stepQuiz, text: 'Check yourself with a quiz' },
     ],
   },

@@ -54,7 +54,7 @@ function Question({ q, qIndex, onResult }) {
 }
 
 export default function Quiz({ uid, docId, chunkIndex, quiz }) {
-  if (!quiz?.length) return <p className="muted">No questions for this chunk.</p>;
+  if (!quiz?.length) return <p className="muted">No questions for this nugget.</p>;
   return (
     <div className="quiz">
       <p className="muted">Just a quick check. Nothing is graded.</p>

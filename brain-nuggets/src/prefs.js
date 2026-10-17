@@ -24,11 +24,12 @@ function apply(p) {
 }
 
 // Comfort settings: applied instantly from this browser, synced to Firestore per user.
-export function usePrefs(uid) {
+// They only show inside a lecture or assignment (active); everywhere else uses the defaults.
+export function usePrefs(uid, active) {
   const [prefs, setPrefs] = useState(() => ({ ...DEFAULT_PREFS, ...readLocal() }));
   const saveTimer = useRef();
 
-  useEffect(() => { apply(prefs); }, [prefs]);
+  useEffect(() => { apply(active ? prefs : DEFAULT_PREFS); }, [prefs, active]);
 
   useEffect(() => {
     if (!uid) return;

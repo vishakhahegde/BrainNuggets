@@ -24,7 +24,7 @@ export default function AskBox({ chunk, context }) {
   return (
     <section className="ask">
       <form onSubmit={submit}>
-        <label htmlFor="ask-input" className="label">Stuck? Ask about this chunk</label>
+        <label htmlFor="ask-input" className="label">Stuck? Ask about this nugget</label>
         <div className="ask-row">
           <input
             id="ask-input"
